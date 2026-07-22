@@ -61,5 +61,9 @@ def validate_conf(filepath: str) -> dict:
         print(f"Validation error: {e}")
         sys.exit(1)
 
-def validate_maze(filepath: str) -> bool:
+def validate_maze(filepath: str, data: dict) -> bool:
+    with open(filepath, 'r', encoding='utf-8') as file:
+        raw_data = [line.strip() for line in file]
+    if data['perfect'] == True:
+        
 

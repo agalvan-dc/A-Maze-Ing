@@ -8,12 +8,12 @@ def main() -> None:
     print("=== A-Maze-Ing ===")
     print("\nParsing errors...")
     try:
-        struc.validate_conf("utilities/config.txt")
+        data = struc.validate_conf("utilities/config.txt")
     except FileNotFoundError as e:
         print(f"Not the best path? - {e}")
         sys.exit(1)
     try:
-        struc.validate_maze(struc.generate_maze())
+        struc.validate_maze(struc.generate_maze(), data)
     except FileNotFoundError as e:
         print(f"Not the best path? - {e}")
         sys.exit(1)
