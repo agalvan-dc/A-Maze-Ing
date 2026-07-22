@@ -13,7 +13,7 @@ def main() -> None:
         print(f"Not the best path? - {e}")
         sys.exit(1)
     try:
-        struc.validate_maze(struc.generate_maze(), data)
+        struc.validate_maze(struc.generate_maze(data), data)
     except FileNotFoundError as e:
         print(f"Not the best path? - {e}")
         sys.exit(1)
