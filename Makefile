@@ -4,7 +4,9 @@ CONFIG == config.txt
 install:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install flake8 mypy
-	 
+	$(PYTHON) -m pip install -r utilities/requirements.txt
+
+
 clean:
 
 lint:
@@ -15,5 +17,9 @@ lint-strict:
 	flake8 .
 	$(PYTHON) -m mypy . --strict
 
+v_env:
+	$(PYTHON) -m venv v_env
+	$(PYTHON) source v_env/bin/activate  
 
-.PHONY: install run debug clean lint lint-strict 
+
+.PHONY: install run debug clean lint lint-strict v_env
