@@ -38,7 +38,7 @@ class ValidateConfig(BaseModel):
         return self
 
 
-def validate(filepath: str) -> dict:
+def validate_conf(filepath: str) -> dict:
     config_dict = {}
 
     try:
@@ -57,3 +57,5 @@ def validate(filepath: str) -> dict:
         print(f"Error: File not found '{filepath}'")
     except ValidationError as e:
         print(f"Validation error: {e}")
+
+    
