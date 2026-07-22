@@ -1,3 +1,4 @@
 pydantic>=2.0.0,<3.0.0
 numpy>=1.26.0
-mlx-2.2-py3-none-any.whl
+pandas>=2.2.0
+#mlx-2.2-py3-none-any.whl

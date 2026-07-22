@@ -1,6 +1,7 @@
 
 from pydantic import BaseModel, model_validator, field_validator, Field
 from pydantic import ValidationError
+import sys
 
 
 class ValidateConfig(BaseModel):
@@ -9,7 +10,8 @@ class ValidateConfig(BaseModel):
     entry: tuple[int, int]
     exit: tuple[int, int]
     output_file: str = Field(min_length=5)
-    perfect: bool = Field(default=True)
+    perfect: bool = Field(default=False)
+    seed: int | None
 
     @field_validator('entry', 'exit', mode='before')
     @classmethod
@@ -34,6 +36,8 @@ class ValidateConfig(BaseModel):
         if exit_x >= self.width or exit_y >= self.height:
             raise ValueError(f"Exit point {self.exit} outside of maze "
                              f"dimensions ({self.width}x{self.height})")
+        if self.entry == self.exit:
+            raise ValueError("Entry point and exist point cannot be the same.")
 
         return self
 
@@ -53,9 +57,9 @@ def validate_conf(filepath: str) -> dict:
 
         config = ValidateConfig(**config_dict)
         return config.model_dump()
-    except FileNotFoundError:
-        print(f"Error: File not found '{filepath}'")
     except ValidationError as e:
         print(f"Validation error: {e}")
+        sys.exit(1)
 
-    
+def validate_maze(filepath: str) -> bool:
+
