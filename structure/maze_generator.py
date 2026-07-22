@@ -11,3 +11,7 @@ def generate_maze(input: dict) -> str:
     with open(true_path, 'w', encoding='utf-8') as file:
         file.write()
 
+
+
+
+    return "utilities/output_maze.txt"
