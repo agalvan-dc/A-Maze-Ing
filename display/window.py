@@ -5,6 +5,7 @@ import sys
 def mymouse(button, x, y):
     print(f"Got mouse event! button {button} at {x}, {y}.")
 
+
 def mykey(keynum, stuff):
     print(f"Got key {keynum}")
     if keynum == 32:
@@ -12,6 +13,7 @@ def mykey(keynum, stuff):
     elif keynum == 65307:
         m.mlx_destroy_window(mlx_ptr, win_ptr)
         sys.exit(0)
+
 
 m = Mlx()
 
