@@ -16,12 +16,14 @@ def main() -> None:
             raw_data = [line.strip() for line in file]
 
     while True:
-        match input("Terminal rendering (1) or MLX library (2), exit(3)"):
+        match input("Terminal rendering (1) | MLX library (2) | MLX 3D (3) | exit(4)"):
             case 1:
                 print()
             case 2:
                 print()
             case 3:
+                print()
+            case 4:
                 sys.exit("Exiting...")
             case _:
                 raise ValueError("Not a valid option")
