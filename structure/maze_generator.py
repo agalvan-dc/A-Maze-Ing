@@ -1,200 +1,253 @@
-import numpy as np
 from pathlib import Path
 import random
+import numpy as np
+from maze_solver import MazeSolver
 
-EMPTY = ' '
-MARK = '@'
-WALL = chr(9608)
-FORTY_TWO = "\033[48;5;208m \033[0m"
-NORTH, SOUTH, EAST, WEST = "n", "s", "e", "w"
-BLUE = "\033[44m \033[0m"
-RED = "\033[41m \033[0m"
+class MazeGenerator:
+
+    def __init__(self, config_path: str = "/home/caperale/milestone2/amazeing/utilities/config.txt"):
+        # Atributos/Constantes de la clase
+        self.EMPTY = ' '
+        self.MARK = '@'
+        self.WALL = chr(9608)
+        self.FORTY_TWO = "\033[48;5;208m \033[0m"
+        self.NORTH, self.SOUTH, self.EAST, self.WEST = "n", "s", "e", "w"
+        self.BLUE = "\033[44m \033[0m"
+        self.RED = "\033[41m \033[0m"
+        self.config_path = config_path
+        self.warning_msg: str = None
+
+    def temp_dict(self) -> dict:
+        config_dict = {}
+        with open(self.config_path, "r", encoding='utf-8') as config:
+            for line in config:
+                if not line.strip():
+                    continue
+
+                key, value = line.strip().split("=")
+                config_dict[key.strip()] = value.strip()
+            return config_dict
+
+    def put_ft_in_maze(self, maze, width, height) -> None:
+        # creación del 42 de en medio
+        if width >= 9 and height >= 9:
+            width_center = int(width / 2)
+            height_center = int(height / 2)
+            maze[(width_center - 1, height_center)] = self.FORTY_TWO
+            maze[(width_center - 2, height_center)] = self.FORTY_TWO
+            maze[(width_center - 3, height_center)] = self.FORTY_TWO
+            maze[(width_center - 3, height_center - 1)] = self.FORTY_TWO
+            maze[(width_center - 3, height_center - 2)] = self.FORTY_TWO
+            maze[(width_center - 1, height_center + 1)] = self.FORTY_TWO
+            maze[(width_center - 1, height_center + 2)] = self.FORTY_TWO
+            maze[(width_center + 1, height_center)] = self.FORTY_TWO
+            maze[(width_center + 2, height_center)] = self.FORTY_TWO
+            maze[(width_center + 3, height_center)] = self.FORTY_TWO
+            maze[(width_center + 1, height_center + 2)] = self.FORTY_TWO
+            maze[(width_center + 2, height_center + 2)] = self.FORTY_TWO
+            maze[(width_center + 3, height_center + 2)] = self.FORTY_TWO
+            maze[(width_center + 1, height_center + 1)] = self.FORTY_TWO
+            maze[(width_center + 1, height_center - 2)] = self.FORTY_TWO
+            maze[(width_center + 2, height_center - 2)] = self.FORTY_TWO
+            maze[(width_center + 3, height_center - 2)] = self.FORTY_TWO
+            maze[(width_center + 3, height_center - 1)] = self.FORTY_TWO
+            maze[(width_center, height_center)] = self.EMPTY
+            maze[(width_center, height_center + 1)] = self.EMPTY
+            maze[(width_center, height_center + 2)] = self.EMPTY
+            maze[(width_center + 2, height_center + 1)] = self.EMPTY
+            maze[(width_center + 2, height_center - 1)] = self.EMPTY
+            maze[(width_center - 2, height_center - 1)] = self.EMPTY
+            maze[(width_center - 2, height_center - 2)] = self.EMPTY
+            maze[(width_center - 2, height_center + 1)] = self.EMPTY
+            maze[(width_center - 2, height_center + 2)] = self.EMPTY
+            maze[(width_center - 1, height_center - 1)] = self.EMPTY
+            maze[(width_center + 1, height_center - 1)] = self.EMPTY
+            maze[(width_center + 3, height_center + 1)] = self.EMPTY
+
+    def do_basic(self, dict_data, maze) -> dict[tuple[int, int], str]:
+        # valores del diccionario
+        width = int(dict_data['WIDTH']) * 2 + 1
+        height = int(dict_data['HEIGHT']) * 2 + 1
+        entry = tuple(map(int, dict_data['ENTRY'].split(',')))
+        exit_pos = tuple(map(lambda c: int(c) * 2 + 1, dict_data['EXIT'].split(',')))
+        output_file = dict_data['OUTPUT_FILE']
+        perfect = dict_data['PERFECT']
+        seed = dict_data.get('SEED')
+
+        if seed and seed != "" and seed != "random" and seed != "RANDOM":
+            random.seed(seed)
+        else:
+            random.seed()
+
+        if exit_pos > (width, height) or exit_pos < (0, 0):
+            raise Exception("exit coords invalid, please put a number between"
+                            " width and height")
+        elif entry > (width, height) or entry < (0, 0):
+            raise Exception("entry coords invalid, please put a number between"
+                            " width and height")
+
+        
+
+        # inicio del algoritmo
+        if width > 9 and height > 9:
+            self.put_ft_in_maze(maze, width, height)
+
+        if width <= 9 or height <= 9:
+            self.warning_msg = "Can't put 42 in maze"
+
+        has_visited = []  # tabla de marcado
+
+        def visit(x, y) -> None:
+            if maze.get((x, y)) != self.FORTY_TWO:  # proteccion del 42
+                maze[(x, y)] = self.EMPTY
+            while True:
+                unvisitedNeighbors = []
+
+                # Solo añadir la dirección si el destino Y el muro intermedio NO son FORTY_TWO
+                if y - 2 >= 1 and (x, y - 2) not in has_visited:
+                    if maze.get((x, y - 2)) != self.FORTY_TWO and maze.get((x, y - 1)) != self.FORTY_TWO:
+                        unvisitedNeighbors.append(self.NORTH)
+
+                if y + 2 < height - 1 and (x, y + 2) not in has_visited:
+                    if maze.get((x, y + 2)) != self.FORTY_TWO and maze.get((x, y + 1)) != self.FORTY_TWO:
+                        unvisitedNeighbors.append(self.SOUTH)
+
+                if x - 2 >= 1 and (x - 2, y) not in has_visited:
+                    if maze.get((x - 2, y)) != self.FORTY_TWO and maze.get((x - 1, y)) != self.FORTY_TWO:
+                        unvisitedNeighbors.append(self.WEST)
+
+                if x + 2 < width - 1 and (x + 2, y) not in has_visited:
+                    if maze.get((x + 2, y)) != self.FORTY_TWO and maze.get((x + 1, y)) != self.FORTY_TWO:
+                        unvisitedNeighbors.append(self.EAST)
+
+                if len(unvisitedNeighbors) == 0:
+                    return
+                else:
+                    next_tile = random.choice(unvisitedNeighbors)
+                    if next_tile == self.NORTH:
+                        nextX, nextY = x, y - 2
+                        maze[(x, y - 1)] = self.EMPTY
+                    elif next_tile == self.SOUTH:
+                        nextX, nextY = x, y + 2
+                        maze[(x, y + 1)] = self.EMPTY
+                    elif next_tile == self.WEST:
+                        nextX, nextY = x - 2, y
+                        maze[(x - 1, y)] = self.EMPTY
+                    elif next_tile == self.EAST:
+                        nextX, nextY = x + 2, y
+                        maze[(x + 1, y)] = self.EMPTY
+
+                    has_visited.append((nextX, nextY))
+                    visit(nextX, nextY)
+
+        has_visited = [entry]  # empezamos por donde diga el config
+        visit(1, 1)
+        if perfect == 'False' or perfect is False:
+            # Recorremos todas las celdas de camino transitables (coordenadas impares)
+            for y in range(1, height - 1, 2):
+                for x in range(1, width - 1, 2):
+                    if maze[(x, y)] == self.EMPTY:
+
+                        # 1. Contamos los muros inmediatos (distancia 1)
+                        wall_neighbors = []
+                        if maze.get((x, y - 1)) in (self.WALL, self.FORTY_TWO):
+                            wall_neighbors.append(self.NORTH)
+                        if maze.get((x, y + 1)) in (self.WALL, self.FORTY_TWO):
+                            wall_neighbors.append(self.SOUTH)
+                        if maze.get((x - 1, y)) in (self.WALL, self.FORTY_TWO):
+                            wall_neighbors.append(self.WEST)
+                        if maze.get((x + 1, y)) in (self.WALL, self.FORTY_TWO):
+                            wall_neighbors.append(self.EAST)
+
+                        # 2. Si tiene 3 muros a distancia 1, es un callejón sin salida real
+                        if len(wall_neighbors) == 3:
+                            secure_options = []
+
+                            # Filtramos las direcciones para quedarnos SOLO con muros internos.
+                            if self.NORTH in wall_neighbors and y > 1 and maze.get((x, y - 1)) == self.WALL:
+                                secure_options.append(self.NORTH)
+                            if self.SOUTH in wall_neighbors and y < height - 2 and maze.get((x, y + 1)) == self.WALL:
+                                secure_options.append(self.SOUTH)
+                            if self.WEST in wall_neighbors and x > 1 and maze.get((x - 1, y)) == self.WALL:
+                                secure_options.append(self.WEST)
+                            if self.EAST in wall_neighbors and x < width - 2 and maze.get((x + 1, y)) == self.WALL:
+                                secure_options.append(self.EAST)
+
+                            # 3. Si hay opciones seguras, elegimos una al azar y rompemos el muro intermedio
+                            if secure_options:
+                                wall_to_break = random.choice(secure_options)
+                                if wall_to_break == self.NORTH:
+                                    maze[(x, y - 1)] = self.EMPTY
+                                elif wall_to_break == self.SOUTH:
+                                    maze[(x, y + 1)] = self.EMPTY
+                                elif wall_to_break == self.WEST:
+                                    maze[(x - 1, y)] = self.EMPTY
+                                elif wall_to_break == self.EAST:
+                                    maze[(x + 1, y)] = self.EMPTY
+
+        maze[entry] = self.BLUE
+        maze[exit_pos] = self.RED
+        return maze
+
+    def generate_maze(self, input_dict: dict, algo: str = "basic") -> dict[tuple[int, int], str]:
+        width = int(input_dict['WIDTH']) * 2 + 1
+        height = int(input_dict['HEIGHT']) * 2 + 1
+
+        # laberinto con todo muros
+        maze = {}
+        for y in range(height):
+            for x in range(width):
+                maze[(x, y)] = self.WALL
+
+        # elegimos algoritmo
+        if algo == "basic":
+            maze = self.do_basic(input_dict, maze)
+        elif algo == "prueba":
+            exit()
+        else:
+            exit()
+        return maze
+
+    def print_maze(self, maze) -> None:
+        width = max(coor[0] for coor in maze.keys()) + 1
+        height = max(coor[1] for coor in maze.keys()) + 1
+        for y in range(height):
+            for x in range(width):
+                print(maze[x, y], end="")
+            print()
+        if self.warning_msg:
+            print(self.warning_msg)
 
 
-def temp_dict() -> dict:
-    config_dict = {}
-    with open("/home/caperale/milestone2/amazeing/utilities/config.txt",
-              "r",
-              encoding='utf-8') as config:
-        for line in config:
-            if not line.strip():
-                continue
+if __name__ == "__main__":
+    try:
+        # 1. Cargar configuración y generar laberinto
+        generator = MazeGenerator()
+        config_data = generator.temp_dict()
+        maze = generator.generate_maze(config_data, "basic")
 
-            key, value = line.strip().split("=")
-            config_dict[key.strip()] = value.strip()
-        return config_dict
+        # 2. Obtener dimensiones
+        width = max(coor[0] for coor in maze.keys()) + 1
+        height = max(coor[1] for coor in maze.keys()) + 1
 
-def put_ft_in_maze(maze, width, height) -> None:
-    # creación del 42 de en medio
-    if width >= 9 and height >= 9:
-        width_center = int(width / 2)
-        height_center = int(height / 2)
-        maze[(width_center - 1, height_center)] = FORTY_TWO
-        maze[(width_center - 2, height_center)] = FORTY_TWO
-        maze[(width_center - 3, height_center)] = FORTY_TWO
-        maze[(width_center - 3, height_center - 1)] = FORTY_TWO
-        maze[(width_center - 3, height_center - 2)] = FORTY_TWO
-        maze[(width_center - 1, height_center + 1)] = FORTY_TWO
-        maze[(width_center - 1, height_center + 2)] = FORTY_TWO
-        maze[(width_center + 1, height_center)] = FORTY_TWO
-        maze[(width_center + 2, height_center)] = FORTY_TWO
-        maze[(width_center + 3, height_center)] = FORTY_TWO
-        maze[(width_center + 1, height_center + 2)] = FORTY_TWO
-        maze[(width_center + 2, height_center + 2)] = FORTY_TWO
-        maze[(width_center + 3, height_center + 2)] = FORTY_TWO
-        maze[(width_center + 1, height_center + 1)] = FORTY_TWO
-        maze[(width_center + 1, height_center - 2)] = FORTY_TWO
-        maze[(width_center + 2, height_center - 2)] = FORTY_TWO
-        maze[(width_center + 3, height_center - 2)] = FORTY_TWO
-        maze[(width_center + 3, height_center - 1)] = FORTY_TWO
-        maze[(width_center, height_center)] = EMPTY
-        maze[(width_center, height_center + 1)] = EMPTY
-        maze[(width_center, height_center + 2)] = EMPTY
-        maze[(width_center + 2, height_center + 1)] = EMPTY
-        maze[(width_center + 2, height_center - 1)] = EMPTY
-        maze[(width_center - 2, height_center - 1)] = EMPTY
+        # 3. Mismas transformaciones de coordenadas que hace do_basic
+        entry = tuple(map(int, config_data['ENTRY'].split(',')))
+        exit_pos = tuple(map(lambda c: int(c) * 2 + 1, config_data['EXIT'].split(',')))
 
-def do_basic(dict, maze) -> dict[tuple[int, int], str]:
-    # valores del diccionario
-    width = int(dict['WIDTH']) * 2 + 1
-    height = int(dict['HEIGHT']) * 2 + 1
-    entry = tuple(map(int, dict['ENTRY'].split(',')))
-    exit = tuple(map(lambda c: int(c) * 2 + 1, dict['EXIT'].split(',')))
-    output_file = dict['OUTPUT_FILE']
-    perfect = dict['PERFECT']
+        # 4. Resolver
+        solver = MazeSolver(maze, entry, exit_pos)
+        path = solver.a_star(maze, entry, exit_pos, width, height)
 
-    # inicio del algoritmo
-    put_ft_in_maze(maze, width, height)
-    has_visited = []  # tabla de marcado
-    def visit(x, y) -> None:
-        if maze.get((x, y)) != FORTY_TWO:  # proteccion del 42
-            maze[(x, y)] = EMPTY
-        while True:
-            unvisitedNeighbors = []
-            
-            # Solo añadir la dirección si el destino Y el muro intermedio NO son FORTY_TWO
-            if y - 2 >= 1 and (x, y - 2) not in has_visited:
-                if maze.get((x, y - 2)) != FORTY_TWO and maze.get((x, y - 1)) != FORTY_TWO:
-                    unvisitedNeighbors.append(NORTH)
-                    
-            if y + 2 < height - 1 and (x, y + 2) not in has_visited:
-                if maze.get((x, y + 2)) != FORTY_TWO and maze.get((x, y + 1)) != FORTY_TWO:
-                    unvisitedNeighbors.append(SOUTH)
-                    
-            if x - 2 >= 1 and (x - 2, y) not in has_visited:
-                if maze.get((x - 2, y)) != FORTY_TWO and maze.get((x - 1, y)) != FORTY_TWO:
-                    unvisitedNeighbors.append(WEST)
-                    
-            if x + 2 < width - 1 and (x + 2, y) not in has_visited:
-                if maze.get((x + 2, y)) != FORTY_TWO and maze.get((x + 1, y)) != FORTY_TWO:
-                    unvisitedNeighbors.append(EAST)
+        # 5. Pintar camino si se encontró solución
+        if path:
+            for pos in path[1:-1]:
+                maze[pos] = solver.solve_color
+        else:
+            print("No se encontró un camino válido.")
 
-            if len(unvisitedNeighbors) == 0:
-                return
-            else:
-                next_tile = random.choice(unvisitedNeighbors)
-                if next_tile == NORTH:
-                    nextX, nextY = x, y - 2
-                    maze[(x, y - 1)] = EMPTY
-                elif next_tile == SOUTH:
-                    nextX, nextY = x, y + 2
-                    maze[(x, y + 1)] = EMPTY
-                elif next_tile == WEST:
-                    nextX, nextY = x - 2, y
-                    maze[(x - 1, y)] = EMPTY
-                elif next_tile == EAST:
-                    nextX, nextY = x + 2, y
-                    maze[(x + 1, y)] = EMPTY
+        # 6. Imprimir
+        generator.print_maze(maze)
 
-                has_visited.append((nextX, nextY))
-                visit(nextX, nextY)
-    has_visited = [entry]  # empezamos por donde diga el config
-    visit(1, 1)
-    if perfect == 'False' or perfect is False:
-        # Recorremos todas las celdas de camino transitables (coordenadas impares)
-        for y in range(1, height - 1, 2):
-            for x in range(1, width - 1, 2):
-                if maze[(x, y)] == EMPTY:
-                    
-                    # 1. Contamos los muros inmediatos (distancia 1)
-                    wall_neighbors = []
-                    if maze.get((x, y - 1)) in (WALL, FORTY_TWO):
-                        wall_neighbors.append(NORTH)
-                    if maze.get((x, y + 1)) in (WALL, FORTY_TWO):
-                        wall_neighbors.append(SOUTH)
-                    if maze.get((x - 1, y)) in (WALL, FORTY_TWO):
-                        wall_neighbors.append(WEST)
-                    if maze.get((x + 1, y)) in (WALL, FORTY_TWO):
-                        wall_neighbors.append(EAST)
-
-                    # 2. Si tiene 3 muros a distancia 1, es un callejón sin salida real
-                    if len(wall_neighbors) == 3:
-                        secure_options = []
-                        
-                        # Filtramos las direcciones para quedarnos SOLO con muros internos.
-                        # Evitamos por completo tocar el perímetro exterior (y=0, y=height-1, x=0, x=width-1)
-                        if NORTH in wall_neighbors and y > 1 and maze.get((x, y - 1)) == WALL: 
-                            secure_options.append(NORTH)
-                        if SOUTH in wall_neighbors and y < height - 2 and maze.get((x, y + 1)) == WALL: 
-                            secure_options.append(SOUTH)
-                        if WEST in wall_neighbors and x > 1 and maze.get((x - 1, y)) == WALL: 
-                            secure_options.append(WEST)
-                        if EAST in wall_neighbors and x < width - 2 and maze.get((x + 1, y)) == WALL: 
-                            secure_options.append(EAST)
-
-                        # 3. Si hay opciones seguras, elegimos una al azar y rompemos el muro intermedio
-                        if secure_options:
-                            wall_to_break = random.choice(secure_options)
-                            if wall_to_break == NORTH:
-                                maze[(x, y - 1)] = EMPTY
-                            elif wall_to_break == SOUTH:
-                                maze[(x, y + 1)] = EMPTY
-                            elif wall_to_break == WEST:
-                                maze[(x - 1, y)] = EMPTY
-                            elif wall_to_break == EAST:
-                                maze[(x + 1, y)] = EMPTY
-    maze[entry] = BLUE
-    maze[exit] = RED
-    return maze
-
-
-def generate_maze(input: dict, algo: str = "basic") -> dict[tuple[int, int], str]:
-    # diccionario temporal, luego se usara input con uno valido parseado
-    width = int(input['WIDTH']) * 2 + 1
-    height = int(input['HEIGHT']) * 2 + 1
-    entry = input['ENTRY']
-    exit = input['EXIT']
-    output_file = input['OUTPUT_FILE']
-    perfect = input['PERFECT']
-
-    # caracter utilizado para el muro
-    WALL = chr(9608)
-
-    # laberinto con todo muros
-    maze = {}
-    for y in range(height):
-        for x in range(width):
-            maze[(x, y)] = WALL
-
-    # elegimos algoritmo
-    if (algo == "basic"):
-        maze = do_basic(input, maze)
-    elif (algo == "prueba"):
-        exit()
-    else:
-        exit()
-    return maze
-
-
-def print_maze(maze) -> None:
-    width = max(coor[0] for coor in maze.keys()) + 1
-    height = max(coor[1] for coor in maze.keys()) + 1
-    for y in range(height):
-        for x in range(width):
-            print(maze[x, y], end="")
-        print()
-
-
-dict = temp_dict()
-maze = generate_maze(dict, "basic")
-print_maze(maze)
+    except Exception:
+        import traceback
+        traceback.print_exc()  # Nos dará la línea exacta si vuelve a fallar
