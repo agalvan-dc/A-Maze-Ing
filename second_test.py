@@ -3,38 +3,38 @@ from mlx import Mlx
 from PIL import Image
 
 class ImageRenderer:
-    """Renderer que prepara la imagen en un formato compatible con MLX."""
+    """Renderer que estira y adapta la imagen exactamente al tamaño de la ventana."""
     
     def __init__(self, image_filename: str):
         self.image_filename = image_filename
         self.temp_file = "temp_render.png"
         self.img_ptr = None
-        self.img_w = 0
-        self.img_h = 0
 
     def prepare_image(self, m_instance: Mlx, mlx_ptr, win_w: int, win_h: int):
-        """Escala la imagen con Pillow y la carga en MLX usando la firma correcta."""
+        """Redimensiona la imagen para cubrir el 100% de la ventana."""
         if not os.path.exists(self.image_filename):
             print(f"[ERROR] No existe el archivo: {self.image_filename}")
             return
 
-        # 1. Cargar y reescalar manteniendo proporciones
+        # 1. Cargar imagen original
         img = Image.open(self.image_filename).convert("RGBA")
         
         resample_filter = Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS
-        img.thumbnail((win_w, win_h), resample_filter)
         
-        # 2. Guardar en formato PNG
+        # 2. Reescalado EXACTO a las dimensiones de la ventana (width, height)
+        img = img.resize((win_w, win_h), resample_filter)
+        
+        # 3. Guardar archivo temporal
         img.save(self.temp_file, format="PNG")
 
-        # 3. Liberar la imagen anterior de la memoria de MLX
+        # 4. Destruir buffer anterior si existía
         if self.img_ptr:
             try:
                 m_instance.mlx_destroy_image(mlx_ptr, self.img_ptr)
             except Exception:
                 pass
 
-        # 4. Cargar la imagen con los 2 argumentos que exige tu wrapper
+        # 5. Cargar en MLX con la firma del wrapper
         res = None
         if hasattr(m_instance, 'mlx_png_file_to_image'):
             res = m_instance.mlx_png_file_to_image(mlx_ptr, self.temp_file)
@@ -44,28 +44,18 @@ class ImageRenderer:
             print("[ERROR] El wrapper de MLX no ofrece métodos de carga conocidos.")
             return
 
-        # Desempaquetar la tupla devuelta (img_ptr, width, height)
-        if isinstance(res, (tuple, list)):
-            self.img_ptr = res[0]
-            self.img_w = res[1] if len(res) > 1 else img.width
-            self.img_h = res[2] if len(res) > 2 else img.height
-        else:
-            self.img_ptr = res
-            self.img_w = img.width
-            self.img_h = img.height
+        self.img_ptr = res[0] if isinstance(res, (tuple, list)) else res
 
-    def draw(self, m_instance: Mlx, mlx_ptr, win_ptr, win_w: int, win_h: int):
-        """Renderiza la imagen centrada en la ventana."""
+    def draw(self, m_instance: Mlx, mlx_ptr, win_ptr):
+        """Pinta la imagen en la posición (0,0) ocupando toda la ventana."""
         if not self.img_ptr:
             return
             
-        offset_x = (win_w - self.img_w) // 2
-        offset_y = (win_h - self.img_h) // 2
-
-        m_instance.mlx_put_image_to_window(mlx_ptr, win_ptr, self.img_ptr, max(0, offset_x), max(0, offset_y))
+        # Posición 0, 0 exacta porque mide lo mismo que la ventana
+        m_instance.mlx_put_image_to_window(mlx_ptr, win_ptr, self.img_ptr, 0, 0)
 
     def cleanup(self):
-        """Limpia el archivo temporal al salir."""
+        """Elimina el PNG temporal."""
         if os.path.exists(self.temp_file):
             try:
                 os.remove(self.temp_file)
@@ -74,7 +64,7 @@ class ImageRenderer:
 
 
 class MazeWindow:
-    def __init__(self, renderer: ImageRenderer, width: int = 800, height: int = 600, title: str = "Image Test"):
+    def __init__(self, renderer: ImageRenderer, width: int = 800, height: int = 600, title: str = "Image Stretched"):
         self.m = Mlx()
         self.mlx_ptr = self.m.mlx_init()
         self.title = title
@@ -97,7 +87,7 @@ class MazeWindow:
         
         self._setup_hooks()
         
-        # Cargar y preparar la imagen
+        
         self.renderer.prepare_image(self.m, self.mlx_ptr, self.width, self.height)
         self.render_frame()
 
@@ -110,12 +100,12 @@ class MazeWindow:
             self.on_close(None)
         elif keycode in (61, 43, 65451):  # Tecla '+' para agrandar
             self._create_window(min(1920, int(self.width * 1.2)), min(1080, int(self.height * 1.2)))
-        elif keycode in (45, 65453):  # Tecla '-' para achicar
+        elif keycode in (45, 65453): 
             self._create_window(max(300, int(self.width * 0.8)), max(300, int(self.height * 0.8)))
 
     def render_frame(self):
         self.m.mlx_clear_window(self.mlx_ptr, self.win_ptr)
-        self.renderer.draw(self.m, self.mlx_ptr, self.win_ptr, self.width, self.height)
+        self.renderer.draw(self.m, self.mlx_ptr, self.win_ptr)
 
     def loop_callback(self, dummy=None):
         self.render_frame()
@@ -136,5 +126,5 @@ if __name__ == "__main__":
     renderer = ImageRenderer(image_path)
     app = MazeWindow(renderer, width=800, height=800)
     
-    print("Iniciando renderizador adaptado a tu MLX...")
+    print("Ejecutando... Usa '+' y '-' para redimensionar la ventana y la imagen al 100%.")
     app.run()
