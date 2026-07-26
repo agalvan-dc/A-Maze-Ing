@@ -1,5 +1,5 @@
 import os
-from mlx import Mlx
+from mlx2 import Mlx
 from PIL import Image
 
 class ImageRenderer:
@@ -132,9 +132,9 @@ class MazeWindow:
 
 if __name__ == "__main__":
     image_path = "sisyphus-eternal-struggle-artwork-n1rd86b9qaqxrhtk.jpg"
-    
+
     renderer = ImageRenderer(image_path)
     app = MazeWindow(renderer, width=800, height=800)
-    
+
     print("Iniciando renderizador adaptado a tu MLX...")
     app.run()

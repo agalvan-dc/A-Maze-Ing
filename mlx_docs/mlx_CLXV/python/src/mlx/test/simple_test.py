@@ -1,10 +1,8 @@
 
 from mlx import Mlx
 
-
 def mymouse(button, x, y, mystuff):
     print(f"Got mouse event! button {button} at {x},{y}.")
-
 
 def mykey(keynum, mystuff):
     print(f"Got key {keynum}, and got my stuff back:")
@@ -12,11 +10,9 @@ def mykey(keynum, mystuff):
     if keynum == 32:
         m.mlx_mouse_hook(win_ptr, None, None)
 
-
 def gere_close(dummy):
     m.mlx_loop_exit(mlx_ptr)
-
-
+    
 m = Mlx()
 mlx_ptr = m.mlx_init()
 win_ptr = m.mlx_new_window(mlx_ptr, 200, 200, "win title")

@@ -1,5 +1,5 @@
 
-from mlx import Mlx
+from mlx2 import Mlx
 
 
 def mymouse(button, x, y, mystuff):

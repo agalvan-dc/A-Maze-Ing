@@ -1,4 +1,4 @@
-from mlx import Mlx
+from mlx2 import Mlx
 from collections.abc import Callable
 from typing import Optional
 from .terminal_display import bin_maze
