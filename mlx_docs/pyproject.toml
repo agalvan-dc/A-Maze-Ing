@@ -9,8 +9,8 @@ description = "Reusable maze generator package from A-Maze-ing"
 requires-python = ">=3.10"
 
 authors = [
-    { name = "sarfreit" },
-    { name = "bramalho" }
+    { name = "agalvan-" },
+    { name = "caperale" }
 ]
 
 [tool.setuptools]
