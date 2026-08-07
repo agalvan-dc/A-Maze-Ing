@@ -7,14 +7,13 @@ from .read_data import read_maze_data as read_m
 
 def bin_maze(filepath: str) -> tuple:
 
-    maze_lines, entry, exit, path_str = read_m(filepath)
+    maze_lines, entry, ex, path_str = read_m(filepath)
 
     map_bits = np.array(
             [[int(char, 16) for char in line.strip()] for line in maze_lines])
     h, w = map_bits.shape
 
-    grid = np.zeros(
-        (2 * h + 1, 2 * w + 1), '  ', dtype=np.uint8)
+    grid = np.zeros((2 * h + 1, 2 * w + 1), dtype=np.uint8)
     grid[0::2, 0::2] = 1
 
     for r in range(h):
@@ -32,7 +31,7 @@ def bin_maze(filepath: str) -> tuple:
                 grid[cr, cc - 1] = 1
     np.save("processed_map.npy", grid)
 
-    return entry, exit, path_str
+    return entry, ex, path_str
 
 
 def terminal_display(entry: tuple, exit_coord: tuple, path_str: str) -> None:
