@@ -120,7 +120,7 @@ class mlx_buffer:
         delta_x = x - self._last_mouse_x
         if abs(delta_x) < 100:
             self.player.rotate(delta_x * sens)
-        self.last_mouse_x = x
+        self._last_mouse_x = x
 
     def process_movement(self) -> None:
         if not self.player or self.active_mode != "3D":
