@@ -57,7 +57,7 @@ class mlx_buffer:
         self._maze_gen = maze_gen
         self._renderer_2d = renderer_2d
         self._renderer_3d = renderer_3d
-        self.player = Player
+        self.player = player
 
         self.active_mode = "2D"
         self._last_mouse_x = self._width // 2
