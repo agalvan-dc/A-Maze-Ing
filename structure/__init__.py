@@ -1,8 +1,11 @@
 from parsing import validate_conf, validate_maze
-from maze_generator import generate_maze
-
+from maze_generator import MazeGenerator
+from maze_solver import MazeSolver
+from MazeModel import MazeModel 
 __all__ = [
     "validate_conf",
     "validate_maze",
-    "generate_maze"
+    "MazeGenerator",
+    "MazeSolver",
+    "MazeModel",
 ]

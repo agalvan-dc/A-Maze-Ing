@@ -1,7 +1,8 @@
-from terminal_display import dt
-from mlx_display import mlx_2d_display as m2d
+from terminal_display import dt, bin_maze
+from mlx_display import mlx_display as md
 
 __all__ = [
     "dt",
-    "m2d",
+    "bin_maze",
+    "md",
 ]

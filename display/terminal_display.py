@@ -74,4 +74,5 @@ def terminal_display(entry: tuple, exit_coord: tuple, path_str: str) -> None:
 
 
 def dt() -> None:
-    terminal_display(bin_maze("utilities/output_maze.txt"))
+    entry, ex, path = bin_maze("utilities/output_maze.txt")
+    terminal_display(entry, ex, path)

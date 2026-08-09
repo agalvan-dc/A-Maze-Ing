@@ -5,7 +5,7 @@ from mlx import Mlx
 from typing import Optional
 from collections.abc import Callable
 from .renderer import MazeRenderer, AnimationState
-from ..structure import MazeSolver, MazeModel
+from ..structure import MazeSolver, MazeModel, MazeGenerator
 from .terminal_display import bin_maze
 from ..engine.Player import Player
 from ..engine.buffer import EngineRenderer
@@ -18,14 +18,29 @@ def random_color() -> int:
 
     return (r << 16) | (g << 8) | b
 
-class MazeGenerator:
-    def __init__(self, renderer: MazeRenderer) -> None:
+class MazeController:
+    def __init__(self, renderer: MazeRenderer, generator: MazeGenerator) -> None:
         self.renderer = renderer
+        self.generator = generator
 
     def gen(self) -> None:
-        self.renderer.model.generate_new_maze()
-        self.renderer.visited_steps = []
-        self.renderer.final_path = []
+        config_data = self.generator.temp_dict()
+        self.generator.generate_maze(config_data, "basic")
+        filepath = "utilities/maze_output.txt"
+
+        new_entry, new_ex, path = bin_maze(filepath)
+
+        self.renderer.model.grid = np.load("processed_map.npy")
+
+        grid = self.renderer.model.grid.shape
+        self.renderer.model.rows, self.renderer.model.cols = grid
+        self.renderer.model.start = new_entry
+        self.renderer.model.end = new_ex
+
+        new_solver = MazeSolver(self.renderer.model, new_entry, new_ex)
+
+        self.renderer.visited_steps = new_solver.get_visited()
+        self.renderer.final_path = new_solver.get_path()
         self.renderer.state = AnimationState.EXPLORING
 
     def show(self) -> None:
@@ -47,14 +62,14 @@ class mlx_buffer:
                  height: int = 600,
                  renderer_2d = None,
                  renderer_3d = None,
-                 maze_gen: Optional[MazeGenerator] = None,
+                 maze_ctrl: Optional[MazeController] = None,
                  player = None
                  ) -> None:
         self._width = width
         self._height = height
         self._img_ptr = None
 
-        self._maze_gen = maze_gen
+        self._maze_ctrl = maze_ctrl
         self._renderer_2d = renderer_2d
         self._renderer_3d = renderer_3d
         self.player = player
@@ -97,16 +112,16 @@ class mlx_buffer:
         if keycode in (109, 65289):
             self.active_mode = "3D" if self.active_mode == "2D" else "2D"
             return
-        if self._maze_gen:
+        if self._maze_ctrl:
             match keycode:
                 case 117: #maze regeneration
-                    self._maze_gen.gen()
+                    self._maze_ctrl.gen()
                 case 105:  #show shortest path
-                    self._maze_gen.show()
+                    self._maze_ctrl.show()
                 case 111:  #Show exploration animation
-                    self._maze_gen.animation()
+                    self._maze_ctrl.animation()
                 case 112:  #change theme
-                    self._maze_gen.rand_color()
+                    self._maze_ctrl.rand_color()
         self.keys_pressed.add(keycode)
 
     def key_release(self, keycode: int, param=None) -> None:
@@ -172,10 +187,11 @@ class mlx_buffer:
         self.m.mlx_loop(self._mlx_ptr)
 
 
-def mlx_display_main(entry: tuple, ex: tuple, path_str: str) -> None:
+def mlx_display(entry: tuple[int, int], ex: tuple[int, int], path_str: str) -> None:
     maze_model = MazeModel("processed_map.npy", entry, ex)
-    maze_solver = MazeSolver(maze_model)
+    maze_solver = MazeSolver(maze_model, entry, ex)
     player = Player(maze_model)
+    generator = MazeGenerator()
 
     renderer_2d = MazeRenderer(
         model=maze_model, 
@@ -183,14 +199,14 @@ def mlx_display_main(entry: tuple, ex: tuple, path_str: str) -> None:
         final_path=maze_solver.get_path()
     )
     renderer_3d = EngineRenderer(model=maze_model, player=player)
-    generator = MazeGenerator(renderer_2d)
+    controller = MazeController(renderer_2d, generator)
 
     window = mlx_buffer(
         width=800, 
         height=600, 
         renderer_2d=renderer_2d,
         renderer_3d=renderer_3d,
-        maze_gen=generator,
+        maze_ctrl=controller,
         player=player
     )
 

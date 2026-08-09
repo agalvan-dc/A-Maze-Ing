@@ -16,8 +16,8 @@ class MazeModel:
         return False
 
     def get_cell_size(self, window_width: int, window_height: int) -> float:
-        cell_w = window_width / self.rows
-        cell_h = window_height / self.cols
+        cell_w = window_width / self.cols
+        cell_h = window_height / self.rows
         return min(cell_w, cell_h)
 
     def get_grid_offset(self, window_width: int, window_height: int, cell_size: float) -> tuple[float, float]:

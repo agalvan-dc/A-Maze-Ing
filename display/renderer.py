@@ -1,5 +1,5 @@
 from mlx import Mlx
-from ..structure.MazeModel import MazeModel, MazeSolver
+from ..structure import MazeModel, MazeSolver
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 import ctypes

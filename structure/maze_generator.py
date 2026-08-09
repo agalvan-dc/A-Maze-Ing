@@ -5,7 +5,7 @@ from maze_solver import MazeSolver
 
 class MazeGenerator:
 
-    def __init__(self, config_path: str = "/home/caperale/milestone2/amazeing/utilities/config.txt"):
+    def __init__(self, config_path: str = "/amazeing/utilities/config.txt"):
         # Atributos/Constantes de la clase
         self.EMPTY = ' '
         self.MARK = '@'
@@ -15,7 +15,7 @@ class MazeGenerator:
         self.BLUE = "\033[44m \033[0m"
         self.RED = "\033[41m \033[0m"
         self.config_path = config_path
-        self.warning_msg: str = None
+        self.warning_msg: str | None
 
     def temp_dict(self) -> dict:
         config_dict = {}
@@ -98,6 +98,7 @@ class MazeGenerator:
         has_visited = []  # tabla de marcado
 
         def visit(x, y) -> None:
+            nextX, nextY = 0, 0
             if maze.get((x, y)) != self.FORTY_TWO:  # proteccion del 42
                 maze[(x, y)] = self.EMPTY
             while True:

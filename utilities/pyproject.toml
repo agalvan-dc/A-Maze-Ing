@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "mazegen"
+version = "1.0.0"
+description = "Reusable maze generator package from A-Maze-ing"
+authors = [
+    "agalvan-",
+    "caperale"
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.26.0"
+mlx = "^0.0.11"
+pydantic = "^2.6.0"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+flake8-pyproject = "^1.2.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+exclude = [
+    "venv",
+    ".venv",
+    "__pycache__",
+    "mlx_CLXV"
+]
+
+[tool.mypy]
+exclude = [
+    "venv", 
+    ".venv", 
+    "mlx_CLXV"
+]
+warn_return_any = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true

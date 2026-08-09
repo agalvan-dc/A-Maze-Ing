@@ -1,39 +1,55 @@
 import random
 import numpy as np
+from MazeModel import MazeModel as maze_model
 
 class MazeSolver:
-    def __init__(self, maze, entry, exit):
+    def __init__(self, maze: maze_model,
+                 entry: tuple[int, int],
+                 exit: tuple[int ,int]) -> None:
         self.maze = maze
         self.solve_color = "\033[48;5;201m \033[0m"
         self.entry = entry
         self.exit = exit
 
+        self.path = []
+        self.visited = []
+        self.a_star()
+
+    def get_path(self):
+        return self.path
+
+    def get_visited(self):
+        return self.visited
+
     @staticmethod
     def heuristic(a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    def a_star(self, maze, entry, exit, width, height):
-        open_list = [entry]
-        visited = set()
-        g_score = {entry: 0}
-        f_score = {entry: self.heuristic(entry, exit)}
+    def a_star(self):
+        open_list = [self.entry]
+        visited_set = set()
+        g_score = {self.entry: 0}
+        f_score = {self.entry: self.heuristic(self.entry, self.exit)}
         came_from = {}
 
         while open_list:
             current = min(open_list, key=lambda node:
                           f_score.get(node, float('inf')))
 
-            if current == exit:
+            if current == self.exit:
                 # reconstruimos el camino y lo devolvemos a la inversa
                 path = []
                 while current in came_from:
                     path.append(current)
                     current = came_from[current]
-                path.append(entry)
-                return path[::-1]
+                path.append(self.entry)
+                self.path = path[::-1]
+                return self.path
 
             open_list.remove(current)
-            visited.add(current)
+            visited_set.add(current)
+
+            self.visited.append(current)
             # vecinos
             neighbors = [
                 (current[0] + 1, current[1]),
@@ -45,12 +61,11 @@ class MazeSolver:
             for neighbor in neighbors:
                 r, c = neighbor
 
-                if neighbor in visited:
+                if neighbor in visited_set:
                     continue
 
-                if 0 <= r < width and 0 <= c < height:
-                    tile = maze.get(neighbor)
-                    if tile != chr(9608) and tile != "\033[48;5;208m \033[0m":
+                if 0 <= r < self.maze.cols and 0 <= c < self.maze.rows:
+                    if not self.maze.is_wall(r, c):
                         tentative_g_score = g_score[current] + 1
 
                         if (neighbor not in g_score
@@ -61,5 +76,5 @@ class MazeSolver:
                                                  self.heuristic(neighbor, exit))
                             if neighbor not in open_list:
                                 open_list.append(neighbor)
-
+        self.path = []
         return []
