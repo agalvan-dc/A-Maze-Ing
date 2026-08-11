@@ -2,6 +2,7 @@ from pathlib import Path
 import random
 import numpy as np
 from maze_solver import MazeSolver
+import sys
 
 class MazeGenerator:
 
@@ -89,7 +90,7 @@ class MazeGenerator:
         
 
         # inicio del algoritmo
-        if width > 9 and height > 9:
+        if width >= 9 and height >= 9:
             self.put_ft_in_maze(maze, width, height)
 
         if width <= 9 or height <= 9:
@@ -221,6 +222,7 @@ class MazeGenerator:
 
 if __name__ == "__main__":
     try:
+        sys.setrecursionlimit(int(1e5))
         # 1. Cargar configuración y generar laberinto
         generator = MazeGenerator()
         config_data = generator.temp_dict()
