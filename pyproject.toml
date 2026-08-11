@@ -7,11 +7,11 @@ authors = [
     "caperale"
 ]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.26.0"
-mlx = "^0.0.11"
 pydantic = "^2.6.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -28,14 +28,16 @@ exclude = [
     "venv",
     ".venv",
     "__pycache__",
-    "mlx_CLXV"
+    "mlx_CLXV",
+    "mlx_docs"
 ]
 
 [tool.mypy]
 exclude = [
     "venv", 
     ".venv", 
-    "mlx_CLXV"
+    "mlx_CLXV",
+    "mlx_docs"
 ]
 warn_return_any = true
 warn_unused_ignores = true
