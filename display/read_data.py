@@ -3,33 +3,33 @@
 def read_maze_data(filepath: str):
     """Lee el archivo .txt y separa el laberinto de las instrucciones."""
     maze_lines = []
-    entry = (0, 0)
+    entry_coord = (0, 0)
     exit_coord = (0, 0)
     path_str = ""
 
     with open(filepath, 'r', encoding='utf-8') as file:
         lines = file.readlines()
 
-    parsing_maze = True
+    entry = 0
     for line in lines:
         stripped = line.strip()
 
         if not stripped:
-            parsing_maze = False
             continue
-
-        if parsing_maze:
+        if "," not in line and entry != 2:
             maze_lines.append(stripped)
         else:
-            if "entry" in line:
-                coords = stripped.split('#')[0].strip()
-                x, y = map(int, coords.split(','))
-                entry = (x, y)
-            elif "exit" in line:
-                coords = stripped.split('#')[0].strip()
-                x, y = map(int, coords.split(','))
+            if entry == 0:
+                coords = stripped
+                x, y = coords.split(',')
+                entry_coord = (x, y)
+                entry = 1
+            elif entry == 1:
+                coords = stripped
+                x, y = coords.split(',')
                 exit_coord = (x, y)
+                entry = 2
             else:
                 path_str = stripped
 
-    return maze_lines, entry, exit_coord, path_str
+    return maze_lines, entry_coord, exit_coord, path_str

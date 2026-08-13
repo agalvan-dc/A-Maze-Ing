@@ -1,11 +1,10 @@
-import random
-import numpy as np
-from MazeModel import MazeModel as maze_model
+from .MazeModel import MazeModel as maze_model
+
 
 class MazeSolver:
     def __init__(self, maze: maze_model,
                  entry: tuple[int, int],
-                 exit: tuple[int ,int]) -> None:
+                 exit: tuple[int, int]) -> None:
         self.maze = maze
         self.solve_color = "\033[48;5;201m \033[0m"
         self.entry = entry
@@ -22,7 +21,7 @@ class MazeSolver:
         return self.visited
 
     @staticmethod
-    def heuristic(a, b):
+    def heuristic(a: tuple[int, int], b: tuple[int, int]) -> int:
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
     def a_star(self):
@@ -52,7 +51,7 @@ class MazeSolver:
             self.visited.append(current)
             # vecinos
             neighbors = [
-                (current[0] + 1, current[1]),
+                (int(current[0]) + 1, current[1]),
                 (current[0] - 1, current[1]),
                 (current[0], current[1] + 1),
                 (current[0], current[1] - 1),
@@ -73,7 +72,8 @@ class MazeSolver:
                             came_from[neighbor] = current
                             g_score[neighbor] = tentative_g_score
                             f_score[neighbor] = (tentative_g_score +
-                                                 self.heuristic(neighbor, exit))
+                                                 self.heuristic(neighbor,
+                                                                self.exit))
                             if neighbor not in open_list:
                                 open_list.append(neighbor)
         self.path = []

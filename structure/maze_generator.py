@@ -1,11 +1,11 @@
-from pathlib import Path
 import random
-import numpy as np
-from maze_solver import MazeSolver
+import os
+from .maze_solver import MazeSolver
+from .parsing import validate_conf
+
 
 class MazeGenerator:
-
-    def __init__(self, config_path: str = "/amazeing/utilities/config.txt"):
+    def __init__(self, config_path: str = "./utilities/config.txt"):
         # Atributos/Constantes de la clase
         self.EMPTY = ' '
         self.MARK = '@'
@@ -14,19 +14,11 @@ class MazeGenerator:
         self.NORTH, self.SOUTH, self.EAST, self.WEST = "n", "s", "e", "w"
         self.BLUE = "\033[44m \033[0m"
         self.RED = "\033[41m \033[0m"
-        self.config_path = config_path
+        self.config_path = os.path.expanduser(config_path)
         self.warning_msg: str | None
 
-    def temp_dict(self) -> dict:
-        config_dict = {}
-        with open(self.config_path, "r", encoding='utf-8') as config:
-            for line in config:
-                if not line.strip():
-                    continue
-
-                key, value = line.strip().split("=")
-                config_dict[key.strip()] = value.strip()
-            return config_dict
+    def get_config(self) -> dict:
+        return validate_conf(self.config_path)
 
     def put_ft_in_maze(self, maze, width, height) -> None:
         # creación del 42 de en medio
@@ -66,13 +58,12 @@ class MazeGenerator:
 
     def do_basic(self, dict_data, maze) -> dict[tuple[int, int], str]:
         # valores del diccionario
-        width = int(dict_data['WIDTH']) * 2 + 1
-        height = int(dict_data['HEIGHT']) * 2 + 1
-        entry = tuple(map(int, dict_data['ENTRY'].split(',')))
-        exit_pos = tuple(map(lambda c: int(c) * 2 + 1, dict_data['EXIT'].split(',')))
-        output_file = dict_data['OUTPUT_FILE']
-        perfect = dict_data['PERFECT']
-        seed = dict_data.get('SEED')
+        width = int(dict_data['width']) * 2 + 1
+        height = int(dict_data['height']) * 2 + 1
+        entry = dict_data['entry']
+        exit_pos = dict_data['exit']
+        perfect = dict_data['perfect']
+        seed = dict_data['seed']
 
         if seed and seed != "" and seed != "random" and seed != "RANDOM":
             random.seed(seed)
@@ -86,7 +77,6 @@ class MazeGenerator:
             raise Exception("entry coords invalid, please put a number between"
                             " width and height")
 
-        
 
         # inicio del algoritmo
         if width > 9 and height > 9:
@@ -190,9 +180,10 @@ class MazeGenerator:
         maze[exit_pos] = self.RED
         return maze
 
-    def generate_maze(self, input_dict: dict, algo: str = "basic") -> dict[tuple[int, int], str]:
-        width = int(input_dict['WIDTH']) * 2 + 1
-        height = int(input_dict['HEIGHT']) * 2 + 1
+    def generate_maze(self, input_dict: dict,
+                      algo: str = "basic") -> dict[tuple[int, int], str]:
+        width = int(input_dict['width']) * 2 + 1
+        height = int(input_dict['height']) * 2 + 1
 
         # laberinto con todo muros
         maze = {}
@@ -232,8 +223,9 @@ if __name__ == "__main__":
         height = max(coor[1] for coor in maze.keys()) + 1
 
         # 3. Mismas transformaciones de coordenadas que hace do_basic
-        entry = tuple(map(int, config_data['ENTRY'].split(',')))
-        exit_pos = tuple(map(lambda c: int(c) * 2 + 1, config_data['EXIT'].split(',')))
+        entry = tuple(map(int, config_data['entry'].split(',')))
+        exit_pos = tuple(map(lambda c: int(c) * 2 + 1,
+                             config_data['exit'].split(',')))
 
         # 4. Resolver
         solver = MazeSolver(maze, entry, exit_pos)

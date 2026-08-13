@@ -60,13 +60,3 @@ def validate_conf(filepath: str) -> dict:
     except ValidationError as e:
         print(f"Validation error: {e}")
         sys.exit(1)
-
-
-#Realmente hay que validarlo?
-# El algoritmo de generacion deberia de ser bueno de por si
-def validate_maze(filepath: str, data: dict) -> bool:
-    with open(filepath, 'r', encoding='utf-8') as file:
-        raw_data = [line.strip() for line in file]
-    if data['perfect'] == True:
-
-

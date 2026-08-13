@@ -20,7 +20,9 @@ class MazeModel:
         cell_h = window_height / self.rows
         return min(cell_w, cell_h)
 
-    def get_grid_offset(self, window_width: int, window_height: int, cell_size: float) -> tuple[float, float]:
+    def get_grid_offset(self, window_width: int,
+                        window_height: int,
+                        cell_size: float) -> tuple[float, float]:
         maze_pixel_width = self.cols * cell_size
         maze_pixel_height = self.rows * cell_size
 

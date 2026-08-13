@@ -1,6 +1,7 @@
-from ..structure.MazeModel import MazeModel
+from structure.MazeModel import MazeModel
 import random
 import math
+
 
 class Player:
     def __init__(self, maze: MazeModel) -> None:
@@ -20,7 +21,7 @@ class Player:
         self.dir_x: float = 0.0
         self.dir_y: float = -1.0
         self.x_plane: float = 0.66
-        self.y_plane: float =  0.0
+        self.y_plane: float = 0.0
 
     def move_forward(self, move_speed: float) -> None:
         new_x = self.pos_x + self.dir_x * move_speed
