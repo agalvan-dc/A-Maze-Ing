@@ -1,6 +1,7 @@
-import numpy as np
-from structure.MazeModel import MazeModel
 from enum import Enum
+from typing import Optional, Union
+from structure import MazeModel
+import numpy as np
 
 
 class AnimationState(Enum):
@@ -12,17 +13,26 @@ class AnimationState(Enum):
 class MazeRenderer:
     def __init__(
         self,
-        model: MazeModel,
+        model: Optional[MazeModel],
         visited_steps: list[tuple[int, int]],
-        final_path: list[tuple[int, int]],
+        final_path: Union[str, list[tuple[int, int]]],
     ) -> None:
         self.model = model
         self.visited_steps = visited_steps
-        self.final_path = final_path
+
+        # Traducción del string a coordenadas
+        if isinstance(final_path, str):
+            self.final_path = self._path_str_to_coords(
+                self.model.start, final_path
+            )
+        else:
+            self.final_path = final_path
 
         self.state = AnimationState.EXPLORING
         self.step_index = 0
         self.path_index = 0
+
+        self.steps_per_frame = 2
 
         self.COLOR_BG: int = 0xFF1E1E2E
         self.COLOR_WALL: int = 0xFF45475A
@@ -30,6 +40,22 @@ class MazeRenderer:
         self.COLOR_END: int = 0xFFF38BA8
         self.COLOR_VISITED: int = 0xFF89DCEB
         self.COLOR_PATH: int = 0xFFA6E3A1
+
+    def _path_str_to_coords(
+        self, start: tuple[int, int], path_str: str
+    ) -> list[tuple[int, int]]:
+        moves = {'N': (-1, 0), 'S': (1, 0), 'E': (0, 1), 'W': (0, -1)}
+        curr_r, curr_c = start
+        coords = [(curr_r, curr_c)]
+
+        for move in path_str:
+            dr, dc = moves.get(move, (0, 0))
+            for _ in range(2):
+                curr_r += dr
+                curr_c += dc
+                coords.append((curr_r, curr_c))
+
+        return coords
 
     def draw_cell(
         self,
@@ -58,42 +84,44 @@ class MazeRenderer:
         screen[:, :] = self.COLOR_BG
 
         cell_size = self.model.get_cell_size(width, height)
-        offset_x, offset_y = self.model.get_grid_offset(width, height,
-                                                        cell_size)
+        offset_x, offset_y = self.model.get_grid_offset(
+            width, height, cell_size
+        )
 
-        # Dibujar paredes
         for r in range(self.model.rows):
             for c in range(self.model.cols):
                 if self.model.is_wall(r, c):
                     self.draw_cell(
-                        screen, r, c, self.COLOR_WALL, cell_size, offset_x,
-                        offset_y
+                        screen, r, c, self.COLOR_WALL, cell_size,
+                        offset_x, offset_y
                     )
 
-        # Dibujar casillas visitadas
-        for i in range(min(self.step_index, len(self.visited_steps))):
+        max_visited = min(self.step_index, len(self.visited_steps))
+        for i in range(max_visited):
             r, c = self.visited_steps[i]
             self.draw_cell(
-                screen, r, c, self.COLOR_VISITED, cell_size, offset_x, offset_y
+                screen, r, c, self.COLOR_VISITED, cell_size,
+                offset_x, offset_y
             )
 
-        # Dibujar el camino final
         if self.state in (AnimationState.DRAWING_PATH,
                           AnimationState.FINISHED):
-            for i in range(min(self.path_index, len(self.final_path))):
+            max_path = min(self.path_index, len(self.final_path))
+            for i in range(max_path):
                 r, c = self.final_path[i]
                 self.draw_cell(
-                    screen, r, c, self.COLOR_PATH, cell_size, offset_x,
-                    offset_y
+                    screen, r, c, self.COLOR_PATH, cell_size,
+                    offset_x, offset_y
                 )
 
-        # Dibujar Entrada y Salida
         sr, sc = self.model.start
         er, ec = self.model.end
-        self.draw_cell(screen, sr, sc, self.COLOR_START, cell_size, offset_x,
-                       offset_y)
-        self.draw_cell(screen, er, ec, self.COLOR_END, cell_size, offset_x,
-                       offset_y)
+        self.draw_cell(
+            screen, sr, sc, self.COLOR_START, cell_size, offset_x, offset_y
+        )
+        self.draw_cell(
+            screen, er, ec, self.COLOR_END, cell_size, offset_x, offset_y
+        )
 
     def update_animation(self) -> None:
         if self.state == AnimationState.FINISHED:
@@ -101,12 +129,12 @@ class MazeRenderer:
 
         if self.state == AnimationState.EXPLORING:
             if self.step_index < len(self.visited_steps):
-                self.step_index += 1
+                self.step_index += self.steps_per_frame
             else:
                 self.state = AnimationState.DRAWING_PATH
 
         elif self.state == AnimationState.DRAWING_PATH:
             if self.path_index < len(self.final_path):
-                self.path_index += 1
+                self.path_index += self.steps_per_frame
             else:
                 self.state = AnimationState.FINISHED

@@ -21,6 +21,21 @@ class EngineRenderer:
 
         self.MINIMAP_SCALE = 8
 
+        self.color_path: int = 0xFF55FF55
+        self.color_exit: int = 0xFFFF5555
+
+        self.path_map = np.zeros((model.rows, model.cols), dtype=bool)
+        self.exit_pos = model.end
+
+    def update_path(self, path: list[tuple[int, int]],
+                    exit_pos: tuple[int, int]) -> None:
+        self.path_map = np.zeros((self.model.rows,
+                                  self.model.cols), dtype=bool)
+        for r, c in path:
+            if 0 <= r < self.model.rows and 0 <= c < self.model.cols:
+                self.path_map[r, c] = True
+        self.exit_pos = exit_pos
+
     def put_pixel(self, screen: np.ndarray,
                   x: int, y: int, color: int) -> None:
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -70,6 +85,13 @@ class EngineRenderer:
                                    self.MINIMAP_SCALE,
                                    self.MINIMAP_SCALE, 0xFFC8C8C8)
 
+        exit_r, exit_c = self.exit_pos
+        self.draw_rect(screen, exit_c * self.MINIMAP_SCALE,
+                       exit_r * self.MINIMAP_SCALE,
+                       self.MINIMAP_SCALE,
+                       self.MINIMAP_SCALE,
+                       self.color_exit)
+
         cx = int(self.player.pos_x * self.MINIMAP_SCALE)
         cy = int(self.player.pos_y * self.MINIMAP_SCALE)
         ps = 4
@@ -83,7 +105,44 @@ class EngineRenderer:
     def render_frame(self, screen: np.ndarray) -> None:
         half_h = self.height // 2
         screen[:half_h, :] = self.color_ceiling
-        screen[half_h:, :] = self.color_floor
+
+        ray_dir_x0 = self.player.dir_x - self.player.x_plane
+        ray_dir_y0 = self.player.dir_y - self.player.y_plane
+        ray_dir_x1 = self.player.dir_x + self.player.x_plane
+        ray_dir_y1 = self.player.dir_y + self.player.y_plane
+
+        y_coords = np.arange(half_h, self.height)
+        p = np.maximum(y_coords - half_h, 1)
+        row_dist = half_h / p
+        floor_step_x = row_dist * (ray_dir_x1 - ray_dir_x0) / self.width
+        floor_step_y = row_dist * (ray_dir_y1 - ray_dir_y0) / self.width
+
+        x_coords = np.arange(self.width)
+
+        floor_x = self.player.pos_x + np.outer(row_dist, ray_dir_x0) + np.outer(floor_step_x, x_coords)
+        floor_y = self.player.pos_y + np.outer(row_dist, ray_dir_y0) + np.outer(floor_step_y, x_coords)
+
+        grid_c = floor_x.astype(int)
+        grid_r = floor_y.astype(int)
+
+        valid = (grid_r >= 0) & (grid_r < self.model.rows) & (grid_c >= 0) & (grid_c < self.model.cols)
+
+        floor_colors = np.full((half_h, self.width),
+                               self.color_floor, dtype=np.uint32)
+
+        valid_r = grid_r[valid]
+        valid_c = grid_c[valid]
+
+        is_path = self.path_map[valid_r, valid_c]
+        is_exit = (valid_r == self.exit_pos[0]) & (valid_c == self.exit_pos[1])
+
+        valid_colors = np.full(valid_r.shape,
+                               self.color_floor, dtype=np.uint32)
+        valid_colors[is_path] = self.color_path
+        valid_colors[is_exit] = self.color_exit
+
+        floor_colors[valid] = valid_colors
+        screen[half_h:self.height, :] = floor_colors
 
         for x in range(self.width):
             cam_x = 2.0 * x / float(self.width) - 1.0
