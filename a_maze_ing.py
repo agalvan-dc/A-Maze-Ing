@@ -3,7 +3,7 @@
 import sys
 import structure as struc
 from display import dt, md, bin_maze, random_color
-
+from structure import MazeSolver
 
 def main() -> None:
     print("=== A-Maze-Ing ===")
@@ -18,21 +18,37 @@ def main() -> None:
         sys.exit(1)
 
     generator = struc.MazeGenerator(config_path)
-    generator.generate_maze(data, "basic")
-
+    maze = generator.generate_maze(data, "basic")
     output_file = "utilities/maze_output.txt"
+    entry = data['entry']
+    exit_pos = data['exit']
+
+    solver = MazeSolver(
+        maze,
+        entry,
+        exit_pos
+    )
+    print("SOLVER WIDTH:", solver.width)
+    print("SOLVER HEIGHT:", solver.height)
+    print(
+        "PHYSICAL:",
+        max(x for x, y in maze) + 1,
+        max(y for x, y in maze) + 1
+    )
+    solver.write_output("utilities/maze_output.txt")
     option = input("Terminal rendering (1) | MLX library (2) | exit(3): ")
     sys.stdout.write("\033[H")
 
     match option:
         case "1":
+            solver.write_output("utilities/maze_output.txt")
             dt()
             while option != "3":
                 option = input("Regen maze (1) | Change colour (2) | exit (3): ")
                 sys.stdout.write("\033[H")
                 match option:
                     case "1":
-                        generator.generate_maze(data, "basic")
+                        maze = generator.generate_maze(data, "basic")
                         dt()
                     case "2":
                         p_color = random_color()

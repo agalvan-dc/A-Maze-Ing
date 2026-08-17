@@ -10,7 +10,7 @@ class MazeGenerator:
         self.EMPTY = ' '
         self.MARK = '@'
         self.WALL = chr(9608)
-        self.FORTY_TWO = "\033[48;5;208m \033[0m"
+        self.FORTY_TWO = "\033[38;5;208m█\033[0m"
         self.NORTH, self.SOUTH, self.EAST, self.WEST = "n", "s", "e", "w"
         self.BLUE = "\033[44m \033[0m"
         self.RED = "\033[41m \033[0m"
@@ -21,47 +21,94 @@ class MazeGenerator:
         return validate_conf(self.config_path)
 
     def put_ft_in_maze(self, maze, width, height) -> None:
-        # creación del 42 de en medio
-        if width >= 9 and height >= 9:
-            width_center = int(width / 2)
-            height_center = int(height / 2)
-            maze[(width_center - 1, height_center)] = self.FORTY_TWO
-            maze[(width_center - 2, height_center)] = self.FORTY_TWO
-            maze[(width_center - 3, height_center)] = self.FORTY_TWO
-            maze[(width_center - 3, height_center - 1)] = self.FORTY_TWO
-            maze[(width_center - 3, height_center - 2)] = self.FORTY_TWO
-            maze[(width_center - 1, height_center + 1)] = self.FORTY_TWO
-            maze[(width_center - 1, height_center + 2)] = self.FORTY_TWO
-            maze[(width_center + 1, height_center)] = self.FORTY_TWO
-            maze[(width_center + 2, height_center)] = self.FORTY_TWO
-            maze[(width_center + 3, height_center)] = self.FORTY_TWO
-            maze[(width_center + 1, height_center + 2)] = self.FORTY_TWO
-            maze[(width_center + 2, height_center + 2)] = self.FORTY_TWO
-            maze[(width_center + 3, height_center + 2)] = self.FORTY_TWO
-            maze[(width_center + 1, height_center + 1)] = self.FORTY_TWO
-            maze[(width_center + 1, height_center - 2)] = self.FORTY_TWO
-            maze[(width_center + 2, height_center - 2)] = self.FORTY_TWO
-            maze[(width_center + 3, height_center - 2)] = self.FORTY_TWO
-            maze[(width_center + 3, height_center - 1)] = self.FORTY_TWO
-            maze[(width_center, height_center)] = self.EMPTY
-            maze[(width_center, height_center + 1)] = self.EMPTY
-            maze[(width_center, height_center + 2)] = self.EMPTY
-            maze[(width_center + 2, height_center + 1)] = self.EMPTY
-            maze[(width_center + 2, height_center - 1)] = self.EMPTY
-            maze[(width_center - 2, height_center - 1)] = self.EMPTY
-            maze[(width_center - 2, height_center - 2)] = self.EMPTY
-            maze[(width_center - 2, height_center + 1)] = self.EMPTY
-            maze[(width_center - 2, height_center + 2)] = self.EMPTY
-            maze[(width_center - 1, height_center - 1)] = self.EMPTY
-            maze[(width_center + 1, height_center - 1)] = self.EMPTY
-            maze[(width_center + 3, height_center + 1)] = self.EMPTY
+        logical_width = (width - 1) // 2
+        logical_height = (height - 1) // 2
+
+        if logical_width < 9 or logical_height < 9:
+            return
+
+        width_center = logical_width // 2
+        height_center = logical_height // 2
+
+        forty_two = [
+            (-1, 0),
+            (-2, 0),
+            (-3, 0),
+            (-3, -1),
+            (-3, -2),
+
+            (-1, 1),
+            (-1, 2),
+
+            (1, 0),
+            (2, 0),
+            (3, 0),
+            (1, 1),
+            (1, 2),
+            (2, 2),
+            (3, 2),
+
+            (1, -2),
+            (2, -2),
+            (3, -2),
+            (3, -1),
+        ]
+
+        empty = [
+            (0, 0),
+            (0, 1),
+            (0, 2),
+            (2, 1),
+            (2, -1),
+            (-2, -1),
+            (-2, -2),
+            (-2, 1),
+            (-2, 2),
+            (-1, -1),
+            (1, -1),
+            (3, 1),
+        ]
+
+        for dx, dy in forty_two:
+            x = width_center + dx
+            y = height_center + dy
+
+            physical_x = x * 2 + 1
+            physical_y = y * 2 + 1
+
+            if (
+                0 <= physical_x < width
+                and 0 <= physical_y < height
+            ):
+                maze[(physical_x, physical_y)] = self.FORTY_TWO
+
+        for dx, dy in empty:
+            x = width_center + dx
+            y = height_center + dy
+
+            physical_x = x * 2 + 1
+            physical_y = y * 2 + 1
+
+            if (
+                0 <= physical_x < width
+                and 0 <= physical_y < height
+            ):
+                maze[(physical_x, physical_y)] = self.EMPTY
 
     def do_basic(self, dict_data, maze) -> dict[tuple[int, int], str]:
         # valores del diccionario
         width = int(dict_data['width']) * 2 + 1
         height = int(dict_data['height']) * 2 + 1
-        entry = dict_data['entry']
-        exit_pos = dict_data['exit']
+        logical_entry = dict_data['entry']
+        entry = (
+            logical_entry[0] * 2 + 1,
+            logical_entry[1] * 2 + 1
+        )
+        logical_exit = dict_data['exit']
+        exit_pos = (
+            logical_exit[0] * 2 + 1,
+            logical_exit[1] * 2 + 1
+        )
         perfect = dict_data['perfect']
         seed = dict_data['seed']
 
@@ -213,34 +260,52 @@ class MazeGenerator:
 
 if __name__ == "__main__":
     try:
-        # 1. Cargar configuración y generar laberinto
+        # 1. Cargar configuración
         generator = MazeGenerator()
-        config_data = generator.temp_dict()
+        config_path = "utilities/config.txt"
+        config_data = validate_conf(config_path)
+
+        # 2. Generar laberinto
         maze = generator.generate_maze(config_data, "basic")
 
-        # 2. Obtener dimensiones
+        # 3. Obtener dimensiones
         width = max(coor[0] for coor in maze.keys()) + 1
         height = max(coor[1] for coor in maze.keys()) + 1
 
-        # 3. Mismas transformaciones de coordenadas que hace do_basic
-        entry = tuple(map(int, config_data['entry'].split(',')))
-        exit_pos = tuple(map(lambda c: int(c) * 2 + 1,
-                             config_data['exit'].split(',')))
+        # 4. Coordenadas
+        entry = config_data['entry']
 
-        # 4. Resolver
-        solver = MazeSolver(maze, entry, exit_pos)
-        path = solver.a_star(maze, entry, exit_pos, width, height)
+        exit_pos = (
+            config_data['exit'][0] * 2 + 1,
+            config_data['exit'][1] * 2 + 1
+        )
 
-        # 5. Pintar camino si se encontró solución
+        # 5. Resolver
+        solver = MazeSolver(
+            maze,
+            entry,
+            exit_pos
+        )
+
+        path = solver.a_star()
+
+        # 6. Pintar camino
         if path:
             for pos in path[1:-1]:
                 maze[pos] = solver.solve_color
         else:
             print("No se encontró un camino válido.")
 
-        # 6. Imprimir
+        # 7. Imprimir laberinto
         generator.print_maze(maze)
+
+        # 8. Información de prueba
+        print("\nENTRY:", entry)
+        print("EXIT:", exit_pos)
+        print("WIDTH:", width)
+        print("HEIGHT:", height)
+        print("PATH:", path)
 
     except Exception:
         import traceback
-        traceback.print_exc()  # Nos dará la línea exacta si vuelve a fallar
+        traceback.print_exc()
