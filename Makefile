@@ -9,6 +9,7 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	rm -rf .mypy_cache
+	rm -rf dist
 	rm -f utilities/maze_output.txt
 	rm -f utilities/processed_map.npy
 	rm -f poetry.lock
