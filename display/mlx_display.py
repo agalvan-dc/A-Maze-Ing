@@ -327,11 +327,7 @@ class mlx_buffer:
             self.close,
             None
         )
-        self.m.mlx_loop_hook(
-            self._mlx_ptr,
-            self.render_loop_callback,
-            None
-        )
+
 
     def key_press(self, keycode: int, param=None) -> None:
         """Manages pressing keys and maps them to their respective functions.
