@@ -89,14 +89,6 @@ class MazeRenderer:
             width, height, cell_size
         )
 
-        # =========================================================
-        # 1. DIBUJAR LABERINTO
-        #
-        # processed_map.npy:
-        #   0 = camino
-        #   1 = muro
-        #   2 = 42
-        # =========================================================
         for r in range(self.model.rows):
             for c in range(self.model.cols):
 
@@ -126,9 +118,6 @@ class MazeRenderer:
                         offset_y
                     )
 
-        # =========================================================
-        # 2. VISITADOS
-        # =========================================================
         max_visited = min(
             self.step_index,
             len(self.visited_steps)
@@ -137,7 +126,6 @@ class MazeRenderer:
         for i in range(max_visited):
             r, c = self.visited_steps[i]
 
-            # No pintar encima del 42
             if self.model.grid[r, c] == 2:
                 continue
 
@@ -151,9 +139,6 @@ class MazeRenderer:
                 offset_y
             )
 
-        # =========================================================
-        # 3. CAMINO FINAL
-        # =========================================================
         if self.state in (
             AnimationState.DRAWING_PATH,
             AnimationState.FINISHED
@@ -166,7 +151,6 @@ class MazeRenderer:
             for i in range(max_path):
                 r, c = self.final_path[i]
 
-                # No pintar encima del 42
                 if self.model.grid[r, c] == 2:
                     continue
 
@@ -180,9 +164,6 @@ class MazeRenderer:
                     offset_y
                 )
 
-        # =========================================================
-        # 4. ENTRADA / SALIDA
-        # =========================================================
         sr, sc = self.model.start
         er, ec = self.model.end
 

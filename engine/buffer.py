@@ -4,11 +4,28 @@ from .Player import Player
 
 
 class EngineRenderer:
+    """Raycasting engine rendering pseudo-3D perspective with textured walls and floors.
+
+    Attributes:
+        model: MazeModel instance holding grid layout data.
+        player: Player instance managing camera position and direction vectors.
+        height: Vertical screen resolution in pixels.
+        width: Horizontal screen resolution in pixels.
+    """
+
     def __init__(self,
                  model: MazeModel,
                  player: Player,
                  height: int,
                  width: int) -> None:
+        """Initializes the 3D raycasting renderer.
+
+        Args:
+            model: The maze model containing layout and dimensions.
+            player: The player reference for position tracking.
+            height: Height of the rendering target buffer.
+            width: Width of the rendering target buffer.
+        """
         self.model = model
         self.player = player
         self.height = height
@@ -19,30 +36,72 @@ class EngineRenderer:
         self.color_floor: int = 0xFF222222
         self.color_ceiling: int = 0xFF888888
 
-        self.MINIMAP_SCALE = 8
+        self.MINIMAP_SCALE: int = 8
 
         self.color_path: int = 0xFF55FF55
         self.color_exit: int = 0xFFFF5555
 
-        self.path_map = np.zeros((model.rows, model.cols), dtype=bool)
-        self.exit_pos = model.end
+        self.path_map: np.ndarray = np.zeros((model.rows, model.cols), dtype=bool)
+        self.exit_pos: tuple[int, int] = model.end
 
-    def update_path(self, path: list[tuple[int, int]],
+        self.tex_wall: np.ndarray | None = None
+        self.tex_floor: np.ndarray | None = None
+        self.tex_path: np.ndarray | None = None
+
+    def set_textures(self,
+                     tex_wall: np.ndarray,
+                     tex_floor: np.ndarray,
+                     tex_path: np.ndarray) -> None:
+        """Assigns texture arrays loaded from XPM assets.
+
+        Args:
+            tex_wall: 2D uint32 array representing wall texture pixels.
+            tex_floor: 2D uint32 array representing floor texture pixels.
+            tex_path: 2D uint32 array representing solution path texture pixels.
+        """
+        self.tex_wall = tex_wall
+        self.tex_floor = tex_floor
+        self.tex_path = tex_path
+
+    def update_path(self,
+                    path: list[tuple[int, int]],
                     exit_pos: tuple[int, int]) -> None:
-        self.path_map = np.zeros((self.model.rows,
-                                  self.model.cols), dtype=bool)
+        """Updates internal path representation and exit point coordinates.
+
+        Args:
+            path: Collection of (row, col) coordinates denoting path steps.
+            exit_pos: Coordinates (row, col) for the maze target exit.
+        """
+        self.path_map = np.zeros((self.model.rows, self.model.cols), dtype=bool)
         for r, c in path:
             if 0 <= r < self.model.rows and 0 <= c < self.model.cols:
                 self.path_map[r, c] = True
         self.exit_pos = exit_pos
 
-    def put_pixel(self, screen: np.ndarray,
-                  x: int, y: int, color: int) -> None:
+    def put_pixel(self, screen: np.ndarray, x: int, y: int, color: int) -> None:
+        """Draws a single pixel onto the target pixel array.
+
+        Args:
+            screen: Screen pixel array to mutate.
+            x: Horizontal coordinate.
+            y: Vertical coordinate.
+            color: Hexadecimal color integer value.
+        """
         if 0 <= x < self.width and 0 <= y < self.height:
             screen[y, x] = color
 
     def draw_rect(self, screen: np.ndarray, start_x: int, start_y: int,
                   w: int, h: int, color: int) -> None:
+        """Fills a rectangular region on the screen buffer.
+
+        Args:
+            screen: Screen pixel array to mutate.
+            start_x: Left offset boundary.
+            start_y: Top offset boundary.
+            w: Width of the rectangle.
+            h: Height of the rectangle.
+            color: Color value used for fill operation.
+        """
         x0 = max(0, start_x)
         y0 = max(0, start_y)
         x1 = min(self.width, start_x + w)
@@ -52,6 +111,16 @@ class EngineRenderer:
 
     def draw_line(self, screen: np.ndarray, x0: int, y0: int,
                   x1: int, y1: int, color: int) -> None:
+        """Renders a line between two pixel coordinates on the target buffer.
+
+        Args:
+            screen: Screen pixel array to mutate.
+            x0: Starting horizontal coordinate.
+            y0: Starting vertical coordinate.
+            x1: Destination horizontal coordinate.
+            y1: Destination vertical coordinate.
+            color: Line stroke color value.
+        """
         if x0 == x1:
             y_s = max(0, min(y0, y1))
             y_e = min(self.height, max(y0, y1) + 1)
@@ -77,6 +146,11 @@ class EngineRenderer:
         screen[y_vals[valid], x_vals[valid]] = color
 
     def render_minimap(self, screen: np.ndarray) -> None:
+        """Draws top-down 2D radar overlay showing maze walls, path, and player vectors.
+
+        Args:
+            screen: Screen pixel array target buffer.
+        """
         for y in range(self.model.rows):
             for x in range(self.model.cols):
                 if self.model.is_wall(y, x):
@@ -103,6 +177,11 @@ class EngineRenderer:
         self.draw_line(screen, cx, cy, ex, ey, 0xFFFFFFFF)
 
     def render_frame(self, screen: np.ndarray) -> None:
+        """Executes full raycasting pass for ceiling, textured floor, walls, and minimap overlay.
+
+        Args:
+            screen: Screen pixel buffer array to update.
+        """
         half_h = self.height // 2
         screen[:half_h, :] = self.color_ceiling
 
@@ -127,20 +206,34 @@ class EngineRenderer:
 
         valid = (grid_r >= 0) & (grid_r < self.model.rows) & (grid_c >= 0) & (grid_c < self.model.cols)
 
-        floor_colors = np.full((half_h, self.width),
-                               self.color_floor, dtype=np.uint32)
-
         valid_r = grid_r[valid]
         valid_c = grid_c[valid]
 
         is_path = self.path_map[valid_r, valid_c]
         is_exit = (valid_r == self.exit_pos[0]) & (valid_c == self.exit_pos[1])
+        is_normal_floor = ~is_path & ~is_exit
 
-        valid_colors = np.full(valid_r.shape,
-                               self.color_floor, dtype=np.uint32)
-        valid_colors[is_path] = self.color_path
+        exact_floor_x = floor_x[valid]
+        exact_floor_y = floor_y[valid]
+
+        valid_colors = np.full(valid_r.shape, self.color_floor, dtype=np.uint32)
+
+        if self.tex_floor is not None and self.tex_path is not None:
+            if np.any(is_normal_floor):
+                tex_h, tex_w = self.tex_floor.shape
+                f_tex_x = (exact_floor_x[is_normal_floor] * tex_w).astype(int) % tex_w
+                f_tex_y = (exact_floor_y[is_normal_floor] * tex_h).astype(int) % tex_h
+                valid_colors[is_normal_floor] = self.tex_floor[f_tex_y, f_tex_x]
+
+            if np.any(is_path):
+                tex_h, tex_w = self.tex_path.shape
+                p_tex_x = (exact_floor_x[is_path] * tex_w).astype(int) % tex_w
+                p_tex_y = (exact_floor_y[is_path] * tex_h).astype(int) % tex_h
+                valid_colors[is_path] = self.tex_path[p_tex_y, p_tex_x]
+
         valid_colors[is_exit] = self.color_exit
 
+        floor_colors = np.full((half_h, self.width), self.color_floor, dtype=np.uint32)
         floor_colors[valid] = valid_colors
         screen[half_h:self.height, :] = floor_colors
 
@@ -201,8 +294,35 @@ class EngineRenderer:
             draw_start = max(0, -line_height // 2 + half_h)
             draw_end = min(self.height - 1, line_height // 2 + half_h)
 
-            wall_color = self.color_ns if side == 1 else self.color_ew
+            if self.tex_wall is not None:
+                if side == 0:
+                    wall_x = self.player.pos_y + perp_wall_dist * ray_dir_y
+                else:
+                    wall_x = self.player.pos_x + perp_wall_dist * ray_dir_x
+                wall_x -= np.floor(wall_x)
 
-            screen[draw_start:draw_end + 1, x] = wall_color
+                tex_wall_h, tex_wall_w = self.tex_wall.shape
+                tex_x = int(wall_x * float(tex_wall_w))
+
+                if side == 0 and ray_dir_x > 0:
+                    tex_x = tex_wall_w - tex_x - 1
+                if side == 1 and ray_dir_y < 0:
+                    tex_x = tex_wall_w - tex_x - 1
+
+                y_coords = np.arange(draw_start, draw_end + 1)
+                d = y_coords * 256 - self.height * 128 + line_height * 128
+                tex_y = ((d * tex_wall_h) / line_height) / 256
+                tex_y = tex_y.astype(int)
+                tex_y = np.clip(tex_y, 0, tex_wall_h - 1)
+
+                wall_colors = self.tex_wall[tex_y, tex_x]
+
+                if side == 1:
+                    wall_colors = (wall_colors >> 1) & 0x7F7F7F
+
+                screen[draw_start:draw_end + 1, x] = wall_colors
+            else:
+                wall_color = self.color_ns if side == 1 else self.color_ew
+                screen[draw_start:draw_end + 1, x] = wall_color
 
         self.render_minimap(screen)
