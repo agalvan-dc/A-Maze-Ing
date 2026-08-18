@@ -16,12 +16,12 @@ clean:
 run: 
 	poetry run python a_maze_ing.py
 lint:
-	flake8 . --exclude=mlx, env_v
-	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	flake8 . --exclude=mlx,env_v
+	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs mypy --exclude='^(mlx|env_v)(/|$)'
 
 lint-strict:
-	flake8 .
-	$(PYTHON) -m mypy . --strict
+	flake8 . --exclude=mlx,env_v
+	$(PYTHON) -m mypy . --strict --exclude='^(mlx|env_v)(/|$)'
 
 v_env:
 	$(PYTHON) -m venv v_env
