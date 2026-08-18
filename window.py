@@ -1,10 +1,11 @@
 import os
-from mlx2 import Mlx
+from mlx import Mlx
 from PIL import Image
+
 
 class ImageRenderer:
     """Renderer que prepara la imagen en un formato compatible con MLX."""
-    
+
     def __init__(self, image_filename: str):
         self.image_filename = image_filename
         self.temp_file = "temp_render.png"
@@ -58,7 +59,7 @@ class ImageRenderer:
         """Renderiza la imagen centrada en la ventana."""
         if not self.img_ptr:
             return
-            
+
         offset_x = (win_w - self.img_w) // 2
         offset_y = (win_h - self.img_h) // 2
 
@@ -80,23 +81,23 @@ class MazeWindow:
         self.title = title
         self.renderer = renderer
         self.win_ptr = None
-        
+
         self.width = width
         self.height = height
-        
+
         self._create_window(self.width, self.height)
 
     def _create_window(self, w: int, h: int):
         if self.win_ptr:
             self.m.mlx_destroy_window(self.mlx_ptr, self.win_ptr)
-            
+
         self.width = w
         self.height = h
-        
+
         self.win_ptr = self.m.mlx_new_window(self.mlx_ptr, self.width, self.height, self.title)
-        
+
         self._setup_hooks()
-        
+
         # Cargar y preparar la imagen
         self.renderer.prepare_image(self.m, self.mlx_ptr, self.width, self.height)
         self.render_frame()

@@ -13,8 +13,9 @@ class AnimationState(Enum):
 
 
 class MazeRenderer:
-    """Class in charge of rendering 2d output. It manages both maze drawing and maze animation
-    
+    """Class in charge of rendering 2d output. It manages both
+        maze drawing and maze animation
+
         Attributes:
             model -> data model that contains maze structure
             visited_steps -> coordinates visited during maze exit search
@@ -31,7 +32,6 @@ class MazeRenderer:
             COLOR_PATH -> path color
     """
 
-
     def __init__(
         self,
         model: Optional[MazeModel],
@@ -39,7 +39,7 @@ class MazeRenderer:
         final_path: Union[str, list[tuple[int, int]]],
     ) -> None:
         """Initializes render components, maze state and maze color
-       
+
             Args:
                 model: maze that is about to be rendered (can be none)
                 visited_steps: organized search sequence of visited maze steps
@@ -72,7 +72,8 @@ class MazeRenderer:
     def _path_str_to_coords(
         self, start: tuple[int, int], path_str: str
     ) -> list[tuple[int, int]]:
-        """Converts a directional text path str into a sequence of maze coordinates.
+        """Converts a directional text path str into
+        a sequence of maze coordinates.
 
         Each directional character (N, S, E, W) shifts the position by 2 units
         to account for structural walls between maze rooms
@@ -115,13 +116,17 @@ class MazeRenderer:
            screen overflow
 
            Args:
-                screen: a 2 dimension NumPy array representing pixel display buffer
+                screen: a 2 dimension NumPy array
+                    representing pixel display buffer
                 row: the row index of the target cell in the maze grid layout
                 col: the col index of the target cell in the maze grid layout
                 color: the hexadecimal color value applied to the cell pixels
-                cell_size: the visual width and height of a single cell in pixels
-                offset_x: horizontal shift padding to center-align the grid on the screen
-                offset_y: vertical shift padding to center-align the grid on the screen
+                cell_size: the visual width and height
+                    of a single cell in pixels
+                offset_x: horizontal shift padding to
+                    center-align the grid on the screen
+                offset_y: vertical shift padding to
+                    center-align the grid on the screen
         """
         height, width = screen.shape
         x_start = int(offset_x + col * cell_size)
@@ -135,7 +140,7 @@ class MazeRenderer:
             screen[y_start:y_end, x_start:x_end] = color
 
     def render_frame(self, screen: np.ndarray) -> None:
-        """Draws the current frame of the maze animation 
+        """Draws the current frame of the maze animation
            state onto the screen buffer
 
            Clears the screen withh the background color, renders static walls,
@@ -143,7 +148,8 @@ class MazeRenderer:
            and endpoint based on the current animation progress
 
             Args:
-                screen: a 2 dimension NumPy serving as the target outputframe buffer
+                screen: a 2 dimension NumPy serving
+                    as the target outputframe buffer
         """
         height, width = screen.shape
 
@@ -159,7 +165,6 @@ class MazeRenderer:
 
                 cell = self.model.grid[r, c]
 
-                # 42
                 if cell == 2:
                     self.draw_cell(
                         screen,
@@ -171,7 +176,6 @@ class MazeRenderer:
                         offset_y
                     )
 
-                # Muro normal
                 elif cell == 1:
                     self.draw_cell(
                         screen,

@@ -115,7 +115,6 @@ def terminal_display(entry: tuple[int, int],
 
         vis_grid.append(new_row)
 
-    # Coordenadas LOGICAS -> coordenadas FISICAS
     start_r = entry[1] * 2 + 1
     start_c = entry[0] * 2 + 1
 
@@ -147,8 +146,6 @@ def terminal_display(entry: tuple[int, int],
 
     time.sleep(0.5)
 
-    # Cada dirección del output representa
-    # un movimiento entre DOS celdas físicas.
     for move in path_str:
 
         dr, dc = moves[move]

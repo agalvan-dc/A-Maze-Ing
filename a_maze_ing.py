@@ -86,6 +86,8 @@ def main() -> None:
                 match option:
                     case "1":
                         maze = generator.generate()
+                        solver = MazeSolver(maze, entry, exit_pos)
+                        solver.write_output(OUTPUT_FILE)
                         dt()
 
                     case "2":

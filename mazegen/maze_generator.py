@@ -50,6 +50,7 @@ class MazeGenerator:
             width: Maze width in logical cells.
             height: Maze height in logical cells.
             seed: Optional seed used for deterministic generation.
+                  If seed is 0, it will generate a completely random maze.
             entry: Entry position in logical coordinates.
             exit: Exit position in logical coordinates. If omitted,
                 the bottom-right cell is used.
@@ -61,6 +62,10 @@ class MazeGenerator:
         """
         if width < 1 or height < 1:
             raise ValueError("width and height must be positive")
+
+        # Si seed es 0, lo pasamos a None para que randomice completamente
+        if seed == 0:
+            seed = None
 
         self.width = width
         self.height = height

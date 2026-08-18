@@ -4,9 +4,11 @@ from .Player import Player
 
 
 class EngineRenderer:
-    """Raycasting engine rendering pseudo-3D perspective with textured walls and floors."""
+    """Raycasting engine rendering pseudo-3D
+    perspective with textured walls and floors."""
 
-    def __init__(self, model: MazeModel, player: Player, height: int, width: int) -> None:
+    def __init__(self, model: MazeModel,
+                 player: Player, height: int, width: int) -> None:
         self.model = model
         self.player = player
         self.height = height
@@ -22,30 +24,36 @@ class EngineRenderer:
         self.color_path: int = 0xFF55FF55
         self.color_exit: int = 0xFFFF5555
 
-        self.path_map: np.ndarray = np.zeros((model.rows, model.cols), dtype=bool)
+        self.path_map: np.ndarray = np.zeros((model.rows, model.cols),
+                                             dtype=bool)
         self.exit_pos: tuple[int, int] = model.end
 
         self.tex_wall: np.ndarray | None = None
         self.tex_floor: np.ndarray | None = None
         self.tex_path: np.ndarray | None = None
 
-    def set_textures(self, tex_wall: np.ndarray, tex_floor: np.ndarray, tex_path: np.ndarray) -> None:
+    def set_textures(self, tex_wall: np.ndarray, tex_floor: np.ndarray,
+                     tex_path: np.ndarray) -> None:
         self.tex_wall = tex_wall
         self.tex_floor = tex_floor
         self.tex_path = tex_path
 
-    def update_path(self, path: list[tuple[int, int]], exit_pos: tuple[int, int]) -> None:
-        self.path_map = np.zeros((self.model.rows, self.model.cols), dtype=bool)
+    def update_path(self, path: list[tuple[int, int]],
+                    exit_pos: tuple[int, int]) -> None:
+        self.path_map = np.zeros((self.model.rows, self.model.cols),
+                                 dtype=bool)
         for r, c in path:
             if 0 <= r < self.model.rows and 0 <= c < self.model.cols:
                 self.path_map[r, c] = True
         self.exit_pos = exit_pos
 
-    def put_pixel(self, screen: np.ndarray, x: int, y: int, color: int) -> None:
+    def put_pixel(self, screen: np.ndarray, x: int, y: int,
+                  color: int) -> None:
         if 0 <= x < self.width and 0 <= y < self.height:
             screen[y, x] = color
 
-    def draw_rect(self, screen: np.ndarray, start_x: int, start_y: int, w: int, h: int, color: int) -> None:
+    def draw_rect(self, screen: np.ndarray, start_x: int,
+                  start_y: int, w: int, h: int, color: int) -> None:
         x0 = max(0, start_x)
         y0 = max(0, start_y)
         x1 = min(self.width, start_x + w)
@@ -53,7 +61,8 @@ class EngineRenderer:
         if x0 < x1 and y0 < y1:
             screen[y0:y1, x0:x1] = color
 
-    def draw_line(self, screen: np.ndarray, x0: int, y0: int, x1: int, y1: int, color: int) -> None:
+    def draw_line(self, screen: np.ndarray, x0: int,
+                  y0: int, x1: int, y1: int, color: int) -> None:
         if x0 == x1:
             y_s = max(0, min(y0, y1))
             y_e = min(self.height, max(y0, y1) + 1)
@@ -75,7 +84,8 @@ class EngineRenderer:
         x_vals = np.linspace(x0, x1, length).astype(int)
         y_vals = np.linspace(y0, y1, length).astype(int)
 
-        valid = (x_vals >= 0) & (x_vals < self.width) & (y_vals >= 0) & (y_vals < self.height)
+        valid = ((x_vals >= 0) & (x_vals < self.width)
+                 & (y_vals >= 0) & (y_vals < self.height))
         screen[y_vals[valid], x_vals[valid]] = color
 
     def render_minimap(self, screen: np.ndarray) -> None:
@@ -121,13 +131,20 @@ class EngineRenderer:
 
         x_coords = np.arange(self.width)
 
-        floor_x = self.player.pos_x + np.outer(row_dist, ray_dir_x0) + np.outer(floor_step_x, x_coords)
-        floor_y = self.player.pos_y + np.outer(row_dist, ray_dir_y0) + np.outer(floor_step_y, x_coords)
+        floor_x = (self.player.pos_x +
+                   row_dist[:, None] *
+                   ray_dir_x0 + floor_step_x[:, None] *
+                   x_coords[None, :])
+        floor_y = (self.player.pos_y +
+                   row_dist[:, None] *
+                   ray_dir_y0 + floor_step_y[:, None] * x_coords[None, :])
 
         grid_c = floor_x.astype(int)
         grid_r = floor_y.astype(int)
 
-        valid = (grid_r >= 0) & (grid_r < self.model.rows) & (grid_c >= 0) & (grid_c < self.model.cols)
+        valid = ((grid_r >= 0) &
+                 (grid_r < self.model.rows) &
+                 (grid_c >= 0) & (grid_c < self.model.cols))
 
         valid_r = grid_r[valid]
         valid_c = grid_c[valid]
@@ -139,14 +156,18 @@ class EngineRenderer:
         exact_floor_x = floor_x[valid]
         exact_floor_y = floor_y[valid]
 
-        valid_colors = np.full(valid_r.shape, self.color_floor, dtype=np.uint32)
+        valid_colors = np.full(valid_r.shape, self.color_floor,
+                               dtype=np.uint32)
 
         if self.tex_floor is not None and self.tex_path is not None:
             if np.any(is_normal_floor):
                 tex_h, tex_w = self.tex_floor.shape
-                f_tex_x = (exact_floor_x[is_normal_floor] * tex_w).astype(int) % tex_w
-                f_tex_y = (exact_floor_y[is_normal_floor] * tex_h).astype(int) % tex_h
-                valid_colors[is_normal_floor] = self.tex_floor[f_tex_y, f_tex_x]
+                f_tex_x = ((exact_floor_x[is_normal_floor] *
+                            tex_w).astype(int) % tex_w)
+                f_tex_y = (exact_floor_y[is_normal_floor] *
+                           tex_h).astype(int) % tex_h
+                valid_colors[is_normal_floor] = self.tex_floor[f_tex_y,
+                                                               f_tex_x]
 
             if np.any(is_path):
                 tex_h, tex_w = self.tex_path.shape
@@ -156,7 +177,8 @@ class EngineRenderer:
 
         valid_colors[is_exit] = self.color_exit
 
-        floor_colors = np.full((half_h, self.width), self.color_floor, dtype=np.uint32)
+        floor_colors = np.full((half_h, self.width),
+                               self.color_floor, dtype=np.uint32)
         floor_colors[valid] = valid_colors
         screen[half_h:self.height, :] = floor_colors
 
@@ -198,11 +220,12 @@ class EngineRenderer:
                     map_y += step_y
                     side = 1
 
-                if map_x < 0 or map_x >= self.model.cols or map_y < 0 or map_y >= self.model.rows:
+                if (map_x < 0 or map_x >=
+                        self.model.cols or map_y <
+                        0 or map_y >= self.model.rows):
                     hit = True
                     break
-                
-                # SE CORRIGIÓ EL ORDEN AQUÍ
+
                 if self.model.is_wall(map_x, map_y):
                     hit = True
 
@@ -241,7 +264,7 @@ class EngineRenderer:
 
                 wall_colors = self.tex_wall[tex_y, tex_x]
                 if side == 1:
-                    wall_colors = (wall_colors >> 1) & 0x7F7F7F
+                    wall_colors = ((wall_colors >> 1) & 0x7F7F7F) | 0xFF0000002
 
                 screen[draw_start:draw_end + 1, x] = wall_colors
             else:
@@ -249,4 +272,3 @@ class EngineRenderer:
                 screen[draw_start:draw_end + 1, x] = wall_color
 
         self.render_minimap(screen)
-

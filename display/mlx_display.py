@@ -1,6 +1,7 @@
 import ctypes
 import math
 import os
+import time
 import random
 from typing import Any, Optional
 
@@ -83,9 +84,17 @@ class MazeController:
 
     def gen(self) -> None:
         """Generate a maze and update all rendering components."""
-        self.generator.generate()
+        self.generator.seed = None
+        self.generator._random = random.Random(None)
+        maze = self.generator.generate()
 
+        solver = MazeSolver(
+            maze,
+            self.generator.entry,
+            self.generator.exit,
+        )
         filepath = "utilities/maze_output.txt"
+        solver.write_output(filepath)
 
         logical_entry, logical_ex, path_str = bin_maze(filepath)
 
@@ -305,6 +314,7 @@ class mlx_buffer:
         self._renderer_2d = renderer_2d
         self._renderer_3d = renderer_3d
         self.player = player
+        self.last_frame_time = time.perf_counter()
 
         self.active_mode = "2D"
         self.keys_pressed: set[int] = set()
@@ -332,20 +342,23 @@ class mlx_buffer:
             self._height,
         )
 
-        data_info = self.m.mlx_get_data_addr(
-            self._img_ptr
-        )
+        ui_data_info = self.m.mlx_get_data_addr(self._ui_bg_ptr)
+        ui_pixel_array = (ctypes.c_uint32 *
+                          (self._ui_width *
+                           self._height)).from_buffer(ui_data_info[0])
+        ui_screen = np.frombuffer(ui_pixel_array,
+                                  dtype=np.uint32).reshape((self._height,
+                                                            self._ui_width))
+        ui_screen.fill(0x001E1E1E)
 
-        pixel_array_type = ctypes.c_uint32 * (
-            self._width * self._height
-        )
+        img_data_info = self.m.mlx_get_data_addr(self._img_ptr)
 
-        self.pixel_buffer = pixel_array_type.from_buffer(
-            data_info[0]
-        )
+        img_pixel_array = (ctypes.c_uint32 *
+                           (self._width *
+                            self._height)).from_buffer(img_data_info[0])
 
         self.screen = np.frombuffer(
-            self.pixel_buffer,
+            img_pixel_array,
             dtype=np.uint32,
         ).reshape(
             (self._height, self._width)
@@ -364,7 +377,6 @@ class mlx_buffer:
             path = self.load_xpm_texture(
                 "utilities/path.xpm"
             )
-
             self._renderer_3d.set_textures(
                 wall,
                 floor,
@@ -388,29 +400,9 @@ class mlx_buffer:
 
     def setup_hooks(self) -> None:
         """Register MLX keyboard and window hooks."""
-        self.m.mlx_hook(
-            self._win_ptr,
-            2,
-            1 << 0,
-            self.key_press,
-            None,
-        )
-
-        self.m.mlx_hook(
-            self._win_ptr,
-            3,
-            1 << 1,
-            self.key_release,
-            None,
-        )
-
-        self.m.mlx_hook(
-            self._win_ptr,
-            17,
-            0,
-            self.close,
-            None,
-        )
+        self.m.mlx_hook(self._win_ptr, 2, 1 << 0, self.key_press, None)
+        self.m.mlx_hook(self._win_ptr, 3, 1 << 1, self.key_release, None)
+        self.m.mlx_hook(self._win_ptr, 33, 0, self.close, None)
 
     def key_press(
         self,
@@ -454,13 +446,13 @@ class mlx_buffer:
         """Handle a keyboard key release."""
         self.keys_pressed.discard(keycode)
 
-    def process_movement(self) -> None:
+    def process_movement(self, dt: float) -> None:
         """Process player movement and camera rotation."""
         if not self.player or self.active_mode != "3D":
             return
 
-        move_speed = 0.05
-        rotation_speed = 0.04
+        move_speed = 3.0 * dt
+        rotation_speed = 2.0 * dt
 
         if 119 in self.keys_pressed:
             self.player.move_forward(move_speed)
@@ -486,60 +478,51 @@ class mlx_buffer:
         ):
             self.player.rotate(rotation_speed)
 
-    def load_xpm_texture(
-        self,
-        filepath: str,
-    ) -> np.ndarray:
-        """Load an XPM texture into a NumPy array.
+        current_cell = (int(self.player.pos_y), int(self.player.pos_x))
 
-        Args:
-            filepath: XPM texture path.
-
-        Returns:
-            Texture represented as uint32 pixels.
-        """
-        img_ptr, width, height = (
-            self.m.mlx_xpm_file_to_image(
+        if current_cell == self.player.maze.end:
+            self.m.mlx_clear_window(self._mlx_ptr, self._win_ptr)
+            self.m.mlx_string_put(
                 self._mlx_ptr,
-                filepath,
+                self._win_ptr,
+                int(self._width / 2) - 50,
+                int(self._height / 2),
+                0x00FFFFFF,
+                "maze complete!"
             )
+            self.m.mlx_do_sync(self._mlx_ptr)
+            time.sleep(3)
+            self.close()
+
+    def load_xpm_texture(self, filepath: str) -> np.ndarray:
+        img_ptr, width, height = self.m.mlx_xpm_file_to_image(
+            self._mlx_ptr,
+            filepath,
         )
 
         if not img_ptr:
-            fallback = np.full(
-                (64, 64),
-                0xFFFF00FF,
-                dtype=np.uint32,
-            )
-
+            fallback = np.full((64, 64), 0xFFFF00FF, dtype=np.uint32)
             fallback[::2, ::2] = 0xFF000000
             fallback[1::2, 1::2] = 0xFF000000
-
             return fallback
 
-        data_info = self.m.mlx_get_data_addr(
-            img_ptr
-        )
+        data_info = self.m.mlx_get_data_addr(img_ptr)
+        size_line = data_info[2]
+        stride = size_line // 4
 
-        pixel_array_type = ctypes.c_uint32 * (
-            width * height
-        )
-
-        pixel_buffer = pixel_array_type.from_buffer(
-            data_info[0]
-        )
+        pixel_array_type = ctypes.c_uint32 * (stride * height)
+        pixel_buffer = pixel_array_type.from_buffer(data_info[0])
 
         texture = np.frombuffer(
             pixel_buffer,
             dtype=np.uint32,
         ).reshape(
-            (height, width)
-        ).copy()
+            (height, stride)
+        )[:, :width].copy()
 
-        self.m.mlx_destroy_image(
-            self._mlx_ptr,
-            img_ptr,
-        )
+        texture = texture | np.uint32(0xFF000000)
+
+        self.m.mlx_destroy_image(self._mlx_ptr, img_ptr)
 
         return texture
 
@@ -549,7 +532,7 @@ class mlx_buffer:
 
         base_x = self._width + 20
         base_y = 50
-
+        self.m.mlx_clear_window(self._mlx_ptr, self._win_ptr)
         self.m.mlx_put_image_to_window(
             self._mlx_ptr,
             self._win_ptr,
@@ -612,8 +595,12 @@ class mlx_buffer:
         Returns:
             Zero to continue the event loop.
         """
-        self.process_movement()
+        current_time = time.perf_counter()
+        dt = current_time - self.last_frame_time
+        self.last_frame_time = current_time
 
+        self.process_movement(dt)
+        self.screen.fill(0x00000000)
         if (
             self.active_mode == "2D"
             and self._renderer_2d
@@ -623,13 +610,8 @@ class mlx_buffer:
                 self.screen
             )
 
-        elif (
-            self.active_mode == "3D"
-            and self._renderer_3d
-        ):
-            self._renderer_3d.render_frame(
-                self.screen
-            )
+        elif self.active_mode == "3D" and self._renderer_3d:
+            self._renderer_3d.render_frame(self.screen)
 
         self.m.mlx_put_image_to_window(
             self._mlx_ptr,
