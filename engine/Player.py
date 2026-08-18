@@ -1,4 +1,4 @@
-from structure.MazeModel import MazeModel
+from structure.maze_model import MazeModel
 import random
 import math
 
