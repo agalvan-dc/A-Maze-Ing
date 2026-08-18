@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional, Union
-from structure.maze_model import MazeModel
+from structure import MazeModel
 import numpy as np
 
 
@@ -45,6 +45,8 @@ class MazeRenderer:
                 visited_steps: organized search sequence of visited maze steps
                 final_path: maze solution as a str or a coor list
         """
+        self.model = model
+        self.visited_steps = visited_steps
 
         if isinstance(final_path, str):
             self.final_path = self._path_str_to_coords(
