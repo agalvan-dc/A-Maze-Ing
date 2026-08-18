@@ -11,11 +11,12 @@ clean:
 	rm -rf .mypy_cache
 	rm -f utilities/maze_output.txt
 	rm -f utilities/processed_map.npy
+	rm -f poetry.lock
 
 run: 
 	poetry run python a_maze_ing.py
 lint:
-	flake8 .
+	flake8 . --exclude=mlx, env_v
 	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:

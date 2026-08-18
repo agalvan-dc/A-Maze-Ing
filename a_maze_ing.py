@@ -5,6 +5,7 @@ import structure as struc
 from display import dt, md, bin_maze, random_color
 from structure import MazeSolver
 
+
 def main() -> None:
     print("=== A-Maze-Ing ===")
     print("\nParsing errors...")
@@ -44,7 +45,8 @@ def main() -> None:
             solver.write_output("utilities/maze_output.txt")
             dt()
             while option != "3":
-                option = input("Regen maze (1) | Change colour (2) | exit (3): ")
+                option = input("Regen maze (1)"
+                               "| Change colour (2) | exit (3): ")
                 sys.stdout.write("\033[H")
                 match option:
                     case "1":

@@ -1,18 +1,25 @@
+import ctypes
+import math
 import os
 import random
-import math
-import ctypes
+from typing import Any, Optional
+
 import numpy as np
 from mlx import Mlx
-from typing import Optional
-from .renderer import MazeRenderer, AnimationState
-from structure import MazeSolver, MazeModel, MazeGenerator
+
+from .renderer import AnimationState, MazeRenderer
 from display.terminal_display import bin_maze
 from engine.Player import Player
 from engine.buffer import EngineRenderer
+from structure import MazeGenerator, MazeModel, MazeSolver
 
 
 def random_color() -> int:
+    """Generate a random opaque RGB color.
+
+    Returns:
+        A random color represented as a 32-bit ARGB integer.
+    """
     r = random.randint(100, 255)
     g = random.randint(100, 255)
     b = random.randint(100, 255)
@@ -20,30 +27,44 @@ def random_color() -> int:
 
 
 class MazeController:
-    def __init__(self,
-                 renderer: MazeRenderer,
-                 generator: MazeGenerator,
-                 player: Optional[Player] = None,
-                 renderer_3d: Optional[EngineRenderer] = None) -> None:
+    """Coordinate maze generation, solving, rendering, and player state."""
+
+    def __init__(
+        self,
+        renderer: MazeRenderer,
+        generator: MazeGenerator,
+        player: Optional[Player] = None,
+        renderer_3d: Optional[EngineRenderer] = None
+    ) -> None:
+        """Initialize the maze controller.
+
+        Args:
+            renderer: Renderer responsible for the 2D maze display.
+            generator: Maze generator used to create new mazes.
+            player: Optional player used by the 3D renderer.
+            renderer_3d: Optional renderer responsible for the 3D display.
+        """
         self.renderer = renderer
         self.generator = generator
         self.player = player
         self.renderer_3d = renderer_3d
 
     def gen(self) -> None:
+        """Generate a maze and update all rendering components."""
         config_data = self.generator.get_config()
         self.generator.generate_maze(config_data, "basic")
 
         filepath = "utilities/maze_output.txt"
         logical_entry, logical_ex, path_str = bin_maze(filepath)
 
-        self.renderer.model.grid = np.load(
-            "utilities/processed_map.npy"
-        )
+        if self.renderer.model is None:
+            raise RuntimeError("Maze renderer requires a maze model.")
 
-        self.renderer.model.rows, self.renderer.model.cols = (
-            self.renderer.model.grid.shape
-        )
+        model = self.renderer.model
+
+        model.grid = np.load("utilities/processed_map.npy")
+        model.rows = int(model.grid.shape[0])
+        model.cols = int(model.grid.shape[1])
 
         physical_entry = (
             logical_entry[1] * 2 + 1,
@@ -55,11 +76,11 @@ class MazeController:
             logical_ex[0] * 2 + 1
         )
 
-        self.renderer.model.start = physical_entry
-        self.renderer.model.end = physical_ex
+        model.start = physical_entry
+        model.end = physical_ex
 
         new_solver = MazeSolver(
-            self.renderer.model,
+            model,
             logical_entry,
             logical_ex
         )
@@ -67,7 +88,7 @@ class MazeController:
         logical_visited = new_solver.get_visited()
 
         visited_set = set(logical_visited)
-        physical_visited = set()
+        physical_visited: set[tuple[int, int]] = set()
 
         for x, y in logical_visited:
             r = y * 2 + 1
@@ -101,7 +122,7 @@ class MazeController:
 
         self.renderer.visited_steps = list(physical_visited)
 
-        physical_path = []
+        physical_path: list[tuple[int, int]] = []
 
         current_r = logical_entry[1] * 2 + 1
         current_c = logical_entry[0] * 2 + 1
@@ -168,15 +189,18 @@ class MazeController:
                 )
 
     def show(self) -> None:
+        """Display the complete solution path immediately."""
         self.renderer.state = AnimationState.FINISHED
         self.renderer.path_index = len(self.renderer.final_path)
 
     def animation(self) -> None:
+        """Reset the maze animation and start exploration."""
         self.renderer.step_index = 0
         self.renderer.path_index = 0
         self.renderer.state = AnimationState.EXPLORING
 
     def rand_color(self) -> None:
+        """Assign random colors to the 2D maze renderer."""
         self.renderer.COLOR_BG = random_color()
         self.renderer.COLOR_WALL = random_color()
         self.renderer.COLOR_PATH = random_color()
@@ -184,16 +208,30 @@ class MazeController:
 
 
 class mlx_buffer:
-    def __init__(self,
-                 width: int = 800,
-                 height: int = 600,
-                 renderer_2d: Optional[MazeRenderer] = None,
-                 renderer_3d: Optional[EngineRenderer] = None,
-                 maze_ctrl: Optional[MazeController] = None,
-                 player: Optional[Player] = None) -> None:
+    """Manage the MLX window, input events, and rendering loop."""
+
+    def __init__(
+        self,
+        width: int = 800,
+        height: int = 600,
+        renderer_2d: Optional[MazeRenderer] = None,
+        renderer_3d: Optional[EngineRenderer] = None,
+        maze_ctrl: Optional[MazeController] = None,
+        player: Optional[Player] = None
+    ) -> None:
+        """Initialize the MLX window and rendering resources.
+
+        Args:
+            width: Window width in pixels.
+            height: Window height in pixels.
+            renderer_2d: Optional 2D maze renderer.
+            renderer_3d: Optional 3D maze renderer.
+            maze_ctrl: Optional maze controller.
+            player: Optional player controlled in 3D mode.
+        """
         self._width = width
         self._height = height
-        self._img_ptr = None
+        self._img_ptr: Any = None
 
         self.maze_ctrl = maze_ctrl
         self._renderer_2d = renderer_2d
@@ -205,48 +243,108 @@ class mlx_buffer:
         self.keys_pressed: set[int] = set()
 
         self.m = Mlx()
-        self._mlx_ptr = self.m.mlx_init()
-        self._win_ptr = self.m.mlx_new_window(self._mlx_ptr,
-                                              self._width,
-                                              self._height,
-                                              "A-Maze-Ing")
-        self._img_ptr = self.m.mlx_new_image(self._mlx_ptr,
-                                             self._width,
-                                             self._height)
+        self._mlx_ptr: Any = self.m.mlx_init()
+        self._win_ptr: Any = self.m.mlx_new_window(
+            self._mlx_ptr,
+            self._width,
+            self._height,
+            "A-Maze-Ing"
+        )
+        self._img_ptr = self.m.mlx_new_image(
+            self._mlx_ptr,
+            self._width,
+            self._height
+        )
 
         data_info = self.m.mlx_get_data_addr(self._img_ptr)
-        PixelArrayType = ctypes.c_uint32 * (self._width * self._height)
-        self.pixel_buffer = PixelArrayType.from_buffer(data_info[0])
-        self.screen = np.frombuffer(self.pixel_buffer,
-                                    dtype=np.uint32).reshape((self._height,
-                                                              self._width))
+        pixel_array_type = ctypes.c_uint32 * (
+            self._width * self._height
+        )
+        self.pixel_buffer = pixel_array_type.from_buffer(data_info[0])
+        self.screen: np.ndarray[Any, np.dtype[np.uint32]] = (
+            np.frombuffer(
+                self.pixel_buffer,
+                dtype=np.uint32
+            ).reshape((self._height, self._width))
+        )
 
         self.setup_hooks()
 
     @property
     def width(self) -> int:
+        """Return the window width in pixels.
+
+        Returns:
+            The current window width.
+        """
         return self._width
 
     @property
     def height(self) -> int:
+        """Return the window height in pixels.
+
+        Returns:
+            The current window height.
+        """
         return self._height
 
     @property
-    def img_ptr(self):
+    def img_ptr(self) -> Any:
+        """Return the MLX image pointer.
+
+        Returns:
+            The MLX image pointer.
+        """
         return self._img_ptr
 
     def setup_hooks(self) -> None:
-        self.m.mlx_hook(self._win_ptr, 2, 1 << 0, self.key_press, None)
-        self.m.mlx_hook(self._win_ptr, 3, 1 << 1, self.key_release, None)
-        self.m.mlx_hook(self._win_ptr, 17, 0, self.close, None)
-        self.m.mlx_loop_hook(self._mlx_ptr, self.render_loop_callback, None)
+        """Register keyboard, window, and render-loop callbacks."""
+        self.m.mlx_hook(
+            self._win_ptr,
+            2,
+            1 << 0,
+            self.key_press,
+            None
+        )
+        self.m.mlx_hook(
+            self._win_ptr,
+            3,
+            1 << 1,
+            self.key_release,
+            None
+        )
+        self.m.mlx_hook(
+            self._win_ptr,
+            17,
+            0,
+            self.close,
+            None
+        )
+        self.m.mlx_loop_hook(
+            self._mlx_ptr,
+            self.render_loop_callback,
+            None
+        )
 
-    def key_press(self, keycode: int, param=None) -> None:
+    def key_press(
+        self,
+        keycode: int,
+        param: Optional[Any] = None
+    ) -> None:
+        """Handle a keyboard key press.
+
+        Args:
+            keycode: Numeric code of the pressed key.
+            param: Optional callback parameter supplied by MLX.
+        """
         if keycode in (65307, 53):
             self.close()
             return
+
         if keycode in (109, 65289, 46, 48):
-            self.active_mode = "3D" if self.active_mode == "2D" else "2D"
+            self.active_mode = (
+                "3D" if self.active_mode == "2D" else "2D"
+            )
             return
 
         if self.maze_ctrl:
@@ -261,14 +359,33 @@ class mlx_buffer:
 
         self.keys_pressed.add(keycode)
 
-    def key_release(self, keycode: int, param=None) -> None:
+    def key_release(
+        self,
+        keycode: int,
+        param: Optional[Any] = None
+    ) -> None:
+        """Handle a keyboard key release.
+
+        Args:
+            keycode: Numeric code of the released key.
+            param: Optional callback parameter supplied by MLX.
+        """
         self.keys_pressed.discard(keycode)
 
     def render_loop_callback(self, param: object) -> int:
+        """Render one frame from the MLX loop callback.
+
+        Args:
+            param: Callback parameter supplied by MLX.
+
+        Returns:
+            Zero to continue the MLX event loop.
+        """
         self.render_frame()
         return 0
 
     def process_movement(self) -> None:
+        """Process currently pressed movement and rotation keys."""
         if not self.player or self.active_mode != "3D":
             return
 
@@ -290,34 +407,76 @@ class mlx_buffer:
             self.player.rotate(rot_speed)
 
     def draw_menu(self) -> None:
+        """Draw the current mode and available controls."""
         colour = 0x00FFFFFF
 
-        self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                              self.width - 250, self.height - 140, colour,
-                              f"ACTUAL MODE: {self.active_mode}")
+        self.m.mlx_string_put(
+            self._mlx_ptr,
+            self._win_ptr,
+            self.width - 250,
+            self.height - 140,
+            colour,
+            f"ACTUAL MODE: {self.active_mode}"
+        )
+
         if self.active_mode == "2D":
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 300, self.height - 120, colour,
-                                  "[M/TAB] Change mode (2D/3D)")
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 300, self.height - 100, colour,
-                                  "[U] Regenerate")
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 300, self.height - 80, colour,
-                                  "[I] Show Route")
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 300, self.height - 60, colour,
-                                  "[O] Animate")
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 300, self.height - 40, colour,
-                                  "[P] Change Theme")
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 300,
+                self.height - 120,
+                colour,
+                "[M/TAB] Change mode (2D/3D)"
+            )
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 300,
+                self.height - 100,
+                colour,
+                "[U] Regenerate"
+            )
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 300,
+                self.height - 80,
+                colour,
+                "[I] Show Route"
+            )
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 300,
+                self.height - 60,
+                colour,
+                "[O] Animate"
+            )
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 300,
+                self.height - 40,
+                colour,
+                "[P] Change Theme"
+            )
 
         if self.active_mode == "3D":
-            self.m.mlx_string_put(self._mlx_ptr, self._win_ptr,
-                                  self.width - 270, self.height - 120,
-                                  colour, "[W/A/S/D] Move  [< >] Rotate")
+            self.m.mlx_string_put(
+                self._mlx_ptr,
+                self._win_ptr,
+                self.width - 270,
+                self.height - 120,
+                colour,
+                "[W/A/S/D] Move  [< >] Rotate"
+            )
 
-    def render_frame(self, *args) -> None:
+    def render_frame(self, *args: object) -> None:
+        """Render the current application frame.
+
+        Args:
+            *args: Optional callback arguments supplied by MLX.
+        """
         self.process_movement()
 
         if self.active_mode == "2D" and self._renderer_2d:
@@ -327,29 +486,60 @@ class mlx_buffer:
         elif self.active_mode == "3D" and self._renderer_3d:
             self._renderer_3d.render_frame(self.screen)
 
-        self.m.mlx_put_image_to_window(self._mlx_ptr, self._win_ptr,
-                                       self._img_ptr, 0, 0)
+        self.m.mlx_put_image_to_window(
+            self._mlx_ptr,
+            self._win_ptr,
+            self._img_ptr,
+            0,
+            0
+        )
 
         self.draw_menu()
         self.m.mlx_do_sync(self._mlx_ptr)
 
-    def close(self, param=None) -> None:
+    def close(self, param: Optional[Any] = None) -> None:
+        """Destroy MLX resources and terminate the application.
+
+        Args:
+            param: Optional callback parameter supplied by MLX.
+        """
         if self._img_ptr:
-            self.m.mlx_destroy_image(self._mlx_ptr, self._img_ptr)
+            self.m.mlx_destroy_image(
+                self._mlx_ptr,
+                self._img_ptr
+            )
+
         if self._win_ptr:
-            self.m.mlx_destroy_window(self._mlx_ptr, self._win_ptr)
+            self.m.mlx_destroy_window(
+                self._mlx_ptr,
+                self._win_ptr
+            )
+
         self.m.mlx_release(self._mlx_ptr)
         os._exit(0)
 
     def run(self) -> None:
-        self.m.mlx_loop_hook(self._mlx_ptr, self.render_frame, None)
+        """Start the MLX event loop."""
+        self.m.mlx_loop_hook(
+            self._mlx_ptr,
+            self.render_frame,
+            None
+        )
         self.m.mlx_loop(self._mlx_ptr)
 
 
-def mlx_display(entry: tuple[int, int],
-                ex: tuple[int, int],
-                path_str: str) -> None:
+def mlx_display(
+    entry: tuple[int, int],
+    ex: tuple[int, int],
+    path_str: str
+) -> None:
+    """Initialize the maze display and start the application.
 
+    Args:
+        entry: Logical maze entry coordinate.
+        ex: Logical maze exit coordinate.
+        path_str: Logical solution path.
+    """
     physical_entry = (
         entry[1] * 2 + 1,
         entry[0] * 2 + 1
@@ -364,12 +554,6 @@ def mlx_display(entry: tuple[int, int],
         "utilities/processed_map.npy",
         physical_entry,
         physical_ex
-    )
-
-    maze_solver = MazeSolver(
-        maze_model,
-        entry,
-        ex
     )
 
     player = Player(maze_model)
@@ -403,6 +587,9 @@ def mlx_display(entry: tuple[int, int],
         maze_ctrl=controller,
         player=player
     )
+
+    if window.maze_ctrl is None:
+        raise RuntimeError("Maze controller was not initialized.")
 
     window.maze_ctrl.gen()
     window.maze_ctrl.animation()
