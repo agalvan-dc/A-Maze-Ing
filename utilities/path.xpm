@@ -1,0 +1,23 @@
+static char *path_xpm[] = {
+"16 16 4 1",
+"  c #665200",
+". c #FFEE55",
+"X c #FFD700",
+"o c #C5A000",
+"                ",
+" .XXXXXo .XXXXXo",
+" .XXXXXo .XXXXXo",
+" ooooooo ooooooo",
+"                ",
+" Xo .XXXXXo .XX",
+" Xo .XXXXXo .XX",
+" oo ooooooo oo ",
+"                ",
+" .XXXXXo .XXXXXo",
+" .XXXXXo .XXXXXo",
+" ooooooo ooooooo",
+"                ",
+" Xo .XXXXXo .XX",
+" Xo .XXXXXo .XX",
+" oo ooooooo oo "
+};

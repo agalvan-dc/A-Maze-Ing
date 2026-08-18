@@ -4,7 +4,24 @@ import math
 
 
 class Player:
+    """Manages player position, camera direction vectors, collision detection, and rotation.
+
+    Attributes:
+        maze: MazeModel instance used for collision checks.
+        pos_x: Horizontal coordinate in map grid units.
+        pos_y: Vertical coordinate in map grid units.
+        dir_x: Horizontal component of the direction vector.
+        dir_y: Vertical component of the direction vector.
+        x_plane: Horizontal component of the camera FOV plane vector.
+        y_plane: Vertical component of the camera FOV plane vector.
+    """
+
     def __init__(self, maze: MazeModel) -> None:
+        """Initializes player spawn coordinates, camera orientation, and FOV plane vectors.
+
+        Args:
+            maze: The maze layout model providing wall boundaries and start position.
+        """
         self.maze = maze
         if not maze.is_wall(maze.start[0], maze.start[1]):
             self.pos_x = float(maze.start[0])
@@ -24,6 +41,11 @@ class Player:
         self.y_plane: float = 0.0
 
     def move_forward(self, move_speed: float) -> None:
+        """Translates the player forward along the directional vector with collision handling.
+
+        Args:
+            move_speed: Distance step multiplier applied to movement calculations.
+        """
         new_x = self.pos_x + self.dir_x * move_speed
         new_y = self.pos_y + self.dir_y * move_speed
 
@@ -33,6 +55,11 @@ class Player:
             self.pos_y = new_y
 
     def move_backward(self, move_speed: float) -> None:
+        """Translates the player backward against the directional vector with collision handling.
+
+        Args:
+            move_speed: Distance step multiplier applied to movement calculations.
+        """
         new_x = self.pos_x - self.dir_x * move_speed
         new_y = self.pos_y - self.dir_y * move_speed
 
@@ -42,6 +69,11 @@ class Player:
             self.pos_y = new_y
 
     def move_left(self, move_speed: float) -> None:
+        """Strafes the player to the left relative to the current direction vector.
+
+        Args:
+            move_speed: Distance step multiplier applied to movement calculations.
+        """
         new_x = self.pos_x + self.dir_y * move_speed
         new_y = self.pos_y - self.dir_x * move_speed
 
@@ -51,6 +83,11 @@ class Player:
             self.pos_y = new_y
 
     def move_right(self, move_speed: float) -> None:
+        """Strafes the player to the right relative to the current direction vector.
+
+        Args:
+            move_speed: Distance step multiplier applied to movement calculations.
+        """
         new_x = self.pos_x - self.dir_y * move_speed
         new_y = self.pos_y + self.dir_x * move_speed
 
@@ -60,6 +97,11 @@ class Player:
             self.pos_y = new_y
 
     def rotate(self, angle: float) -> None:
+        """Rotates direction and camera projection plane vectors using a 2D matrix transform.
+
+        Args:
+            angle: Rotation magnitude in radians.
+        """
         old_dir_x = self.dir_x
         self.dir_x = self.dir_x * math.cos(angle) - self.dir_y * math.sin(angle)
         self.dir_y = old_dir_x * math.sin(angle) + self.dir_y * math.cos(angle)

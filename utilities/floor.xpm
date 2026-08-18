@@ -1,0 +1,22 @@
+static char *floor_xpm[] = {
+"16 16 3 1",
+"  c #1A1A1A",
+". c #2A2A2A",
+"X c #3A3A3A",
+"                ",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+"                ",
+" XXXXXX. XXXXXX.",
+" XXXXXX. XXXXXX.",
+" XXXXXX. XXXXXX.",
+" XXXXXX. XXXXXX.",
+"                ",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+" XXXXXXXXXXXXXX.",
+"                "
+};
