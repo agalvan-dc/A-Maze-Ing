@@ -4,28 +4,9 @@ from .Player import Player
 
 
 class EngineRenderer:
-    """Raycasting engine rendering pseudo-3D perspective with textured walls and floors.
+    """Raycasting engine rendering pseudo-3D perspective with textured walls and floors."""
 
-    Attributes:
-        model: MazeModel instance holding grid layout data.
-        player: Player instance managing camera position and direction vectors.
-        height: Vertical screen resolution in pixels.
-        width: Horizontal screen resolution in pixels.
-    """
-
-    def __init__(self,
-                 model: MazeModel,
-                 player: Player,
-                 height: int,
-                 width: int) -> None:
-        """Initializes the 3D raycasting renderer.
-
-        Args:
-            model: The maze model containing layout and dimensions.
-            player: The player reference for position tracking.
-            height: Height of the rendering target buffer.
-            width: Width of the rendering target buffer.
-        """
+    def __init__(self, model: MazeModel, player: Player, height: int, width: int) -> None:
         self.model = model
         self.player = player
         self.height = height
@@ -48,30 +29,12 @@ class EngineRenderer:
         self.tex_floor: np.ndarray | None = None
         self.tex_path: np.ndarray | None = None
 
-    def set_textures(self,
-                     tex_wall: np.ndarray,
-                     tex_floor: np.ndarray,
-                     tex_path: np.ndarray) -> None:
-        """Assigns texture arrays loaded from XPM assets.
-
-        Args:
-            tex_wall: 2D uint32 array representing wall texture pixels.
-            tex_floor: 2D uint32 array representing floor texture pixels.
-            tex_path: 2D uint32 array representing solution path texture pixels.
-        """
+    def set_textures(self, tex_wall: np.ndarray, tex_floor: np.ndarray, tex_path: np.ndarray) -> None:
         self.tex_wall = tex_wall
         self.tex_floor = tex_floor
         self.tex_path = tex_path
 
-    def update_path(self,
-                    path: list[tuple[int, int]],
-                    exit_pos: tuple[int, int]) -> None:
-        """Updates internal path representation and exit point coordinates.
-
-        Args:
-            path: Collection of (row, col) coordinates denoting path steps.
-            exit_pos: Coordinates (row, col) for the maze target exit.
-        """
+    def update_path(self, path: list[tuple[int, int]], exit_pos: tuple[int, int]) -> None:
         self.path_map = np.zeros((self.model.rows, self.model.cols), dtype=bool)
         for r, c in path:
             if 0 <= r < self.model.rows and 0 <= c < self.model.cols:
@@ -79,29 +42,10 @@ class EngineRenderer:
         self.exit_pos = exit_pos
 
     def put_pixel(self, screen: np.ndarray, x: int, y: int, color: int) -> None:
-        """Draws a single pixel onto the target pixel array.
-
-        Args:
-            screen: Screen pixel array to mutate.
-            x: Horizontal coordinate.
-            y: Vertical coordinate.
-            color: Hexadecimal color integer value.
-        """
         if 0 <= x < self.width and 0 <= y < self.height:
             screen[y, x] = color
 
-    def draw_rect(self, screen: np.ndarray, start_x: int, start_y: int,
-                  w: int, h: int, color: int) -> None:
-        """Fills a rectangular region on the screen buffer.
-
-        Args:
-            screen: Screen pixel array to mutate.
-            start_x: Left offset boundary.
-            start_y: Top offset boundary.
-            w: Width of the rectangle.
-            h: Height of the rectangle.
-            color: Color value used for fill operation.
-        """
+    def draw_rect(self, screen: np.ndarray, start_x: int, start_y: int, w: int, h: int, color: int) -> None:
         x0 = max(0, start_x)
         y0 = max(0, start_y)
         x1 = min(self.width, start_x + w)
@@ -109,18 +53,7 @@ class EngineRenderer:
         if x0 < x1 and y0 < y1:
             screen[y0:y1, x0:x1] = color
 
-    def draw_line(self, screen: np.ndarray, x0: int, y0: int,
-                  x1: int, y1: int, color: int) -> None:
-        """Renders a line between two pixel coordinates on the target buffer.
-
-        Args:
-            screen: Screen pixel array to mutate.
-            x0: Starting horizontal coordinate.
-            y0: Starting vertical coordinate.
-            x1: Destination horizontal coordinate.
-            y1: Destination vertical coordinate.
-            color: Line stroke color value.
-        """
+    def draw_line(self, screen: np.ndarray, x0: int, y0: int, x1: int, y1: int, color: int) -> None:
         if x0 == x1:
             y_s = max(0, min(y0, y1))
             y_e = min(self.height, max(y0, y1) + 1)
@@ -146,14 +79,9 @@ class EngineRenderer:
         screen[y_vals[valid], x_vals[valid]] = color
 
     def render_minimap(self, screen: np.ndarray) -> None:
-        """Draws top-down 2D radar overlay showing maze walls, path, and player vectors.
-
-        Args:
-            screen: Screen pixel array target buffer.
-        """
         for y in range(self.model.rows):
             for x in range(self.model.cols):
-                if self.model.is_wall(y, x):
+                if self.model.is_wall(x, y):
                     self.draw_rect(screen, x * self.MINIMAP_SCALE,
                                    y * self.MINIMAP_SCALE,
                                    self.MINIMAP_SCALE,
@@ -177,11 +105,6 @@ class EngineRenderer:
         self.draw_line(screen, cx, cy, ex, ey, 0xFFFFFFFF)
 
     def render_frame(self, screen: np.ndarray) -> None:
-        """Executes full raycasting pass for ceiling, textured floor, walls, and minimap overlay.
-
-        Args:
-            screen: Screen pixel buffer array to update.
-        """
         half_h = self.height // 2
         screen[:half_h, :] = self.color_ceiling
 
@@ -278,7 +201,9 @@ class EngineRenderer:
                 if map_x < 0 or map_x >= self.model.cols or map_y < 0 or map_y >= self.model.rows:
                     hit = True
                     break
-                if self.model.is_wall(map_y, map_x):
+                
+                # SE CORRIGIÓ EL ORDEN AQUÍ
+                if self.model.is_wall(map_x, map_y):
                     hit = True
 
             if side == 0:
@@ -290,7 +215,6 @@ class EngineRenderer:
                 perp_wall_dist = 0.0001
 
             line_height = int(self.height / perp_wall_dist)
-
             draw_start = max(0, -line_height // 2 + half_h)
             draw_end = min(self.height - 1, line_height // 2 + half_h)
 
@@ -316,7 +240,6 @@ class EngineRenderer:
                 tex_y = np.clip(tex_y, 0, tex_wall_h - 1)
 
                 wall_colors = self.tex_wall[tex_y, tex_x]
-
                 if side == 1:
                     wall_colors = (wall_colors >> 1) & 0x7F7F7F
 
@@ -326,3 +249,4 @@ class EngineRenderer:
                 screen[draw_start:draw_end + 1, x] = wall_color
 
         self.render_minimap(screen)
+
