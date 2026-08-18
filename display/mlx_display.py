@@ -33,53 +33,139 @@ class MazeController:
     def gen(self) -> None:
         config_data = self.generator.get_config()
         self.generator.generate_maze(config_data, "basic")
+
         filepath = "utilities/maze_output.txt"
+        logical_entry, logical_ex, path_str = bin_maze(filepath)
 
-        new_entry, new_ex, _ = bin_maze(filepath)
-        if new_entry == (0, 0):
-            new_entry = (1, 1)
+        self.renderer.model.grid = np.load(
+            "utilities/processed_map.npy"
+        )
 
-        self.renderer.model.grid = np.load("utilities/processed_map.npy")
-        grid_shape = self.renderer.model.grid.shape
-        self.renderer.model.rows, self.renderer.model.cols = grid_shape
-        self.renderer.model.start = new_entry
-        self.renderer.model.end = new_ex
+        self.renderer.model.rows, self.renderer.model.cols = (
+            self.renderer.model.grid.shape
+        )
 
-        new_solver = MazeSolver(self.renderer.model, new_entry, new_ex)
-        self.renderer.visited_steps = new_solver.get_visited()
+        physical_entry = (
+            logical_entry[1] * 2 + 1,
+            logical_entry[0] * 2 + 1
+        )
 
-        raw_path = new_solver.get_path()
-        if isinstance(raw_path, str):
-            final_path = self.renderer._path_str_to_coords(new_entry, raw_path)
-        else:
-            final_path = raw_path
+        physical_ex = (
+            logical_ex[1] * 2 + 1,
+            logical_ex[0] * 2 + 1
+        )
 
-        self.renderer.final_path = final_path
+        self.renderer.model.start = physical_entry
+        self.renderer.model.end = physical_ex
+
+        new_solver = MazeSolver(
+            self.renderer.model,
+            logical_entry,
+            logical_ex
+        )
+
+        logical_visited = new_solver.get_visited()
+
+        visited_set = set(logical_visited)
+        physical_visited = set()
+
+        for x, y in logical_visited:
+            r = y * 2 + 1
+            c = x * 2 + 1
+
+            physical_visited.add((r, c))
+
+            neighbors = (
+                (x + 1, y),
+                (x - 1, y),
+                (x, y + 1),
+                (x, y - 1),
+            )
+
+            for nx, ny in neighbors:
+                if (nx, ny) not in visited_set:
+                    continue
+
+                if not new_solver.can_move(x, y, nx, ny):
+                    continue
+
+                nr = ny * 2 + 1
+                nc = nx * 2 + 1
+
+                physical_visited.add((
+                    (r + nr) // 2,
+                    (c + nc) // 2
+                ))
+
+                physical_visited.add((nr, nc))
+
+        self.renderer.visited_steps = list(physical_visited)
+
+        physical_path = []
+
+        current_r = logical_entry[1] * 2 + 1
+        current_c = logical_entry[0] * 2 + 1
+
+        physical_path.append((current_r, current_c))
+
+        for move in path_str:
+            if move == "N":
+                dr, dc = -1, 0
+            elif move == "S":
+                dr, dc = 1, 0
+            elif move == "E":
+                dr, dc = 0, 1
+            elif move == "W":
+                dr, dc = 0, -1
+            else:
+                continue
+
+            current_r += dr
+            current_c += dc
+            physical_path.append((current_r, current_c))
+
+            current_r += dr
+            current_c += dc
+            physical_path.append((current_r, current_c))
+
+        self.renderer.final_path = physical_path
+
         if self.renderer_3d:
-            self.renderer_3d.update_path(final_path, new_ex)
+            self.renderer_3d.update_path(
+                physical_path,
+                physical_ex
+            )
 
         self.renderer.step_index = 0
         self.renderer.path_index = 0
         self.renderer.state = AnimationState.EXPLORING
 
-        if self.player and len(final_path) > 1:
-            start_r, start_c = final_path[0]
+        if self.player and len(physical_path) > 1:
+            start_r, start_c = physical_path[0]
 
             self.player.pos_x = float(start_c) + 0.5
             self.player.pos_y = float(start_r) + 0.5
 
-            next_r, next_c = final_path[1]
+            next_r, next_c = physical_path[1]
+
             dir_x = float(next_c - start_c)
             dir_y = float(next_r - start_r)
 
             length = math.hypot(dir_x, dir_y)
+
             if length != 0:
                 self.player.dir_x = dir_x / length
                 self.player.dir_y = dir_y / length
 
                 fov_multiplier = 0.66
-                self.player.x_plane = -self.player.dir_y * fov_multiplier
-                self.player.y_plane = self.player.dir_x * fov_multiplier
+
+                self.player.x_plane = (
+                    -self.player.dir_y * fov_multiplier
+                )
+
+                self.player.y_plane = (
+                    self.player.dir_x * fov_multiplier
+                )
 
     def show(self) -> None:
         self.renderer.state = AnimationState.FINISHED
@@ -260,22 +346,54 @@ class mlx_buffer:
         self.m.mlx_loop(self._mlx_ptr)
 
 
-def mlx_display(entry: tuple[int, int], ex: tuple[int, int],
+def mlx_display(entry: tuple[int, int],
+                ex: tuple[int, int],
                 path_str: str) -> None:
-    maze_model = MazeModel("utilities/processed_map.npy", entry, ex)
-    maze_solver = MazeSolver(maze_model, entry, ex)
+
+    physical_entry = (
+        entry[1] * 2 + 1,
+        entry[0] * 2 + 1
+    )
+
+    physical_ex = (
+        ex[1] * 2 + 1,
+        ex[0] * 2 + 1
+    )
+
+    maze_model = MazeModel(
+        "utilities/processed_map.npy",
+        physical_entry,
+        physical_ex
+    )
+
+    maze_solver = MazeSolver(
+        maze_model,
+        entry,
+        ex
+    )
+
     player = Player(maze_model)
     generator = MazeGenerator()
 
     renderer_2d = MazeRenderer(
         model=maze_model,
-        visited_steps=maze_solver.get_visited(),
-        final_path=path_str
+        visited_steps=[],
+        final_path=[]
     )
-    renderer_3d = EngineRenderer(model=maze_model, player=player,
-                                 width=1200,
-                                 height=800)
-    controller = MazeController(renderer_2d, generator, player, renderer_3d)
+
+    renderer_3d = EngineRenderer(
+        model=maze_model,
+        player=player,
+        width=1200,
+        height=800
+    )
+
+    controller = MazeController(
+        renderer_2d,
+        generator,
+        player,
+        renderer_3d
+    )
 
     window = mlx_buffer(
         width=1200,
@@ -285,6 +403,7 @@ def mlx_display(entry: tuple[int, int], ex: tuple[int, int],
         maze_ctrl=controller,
         player=player
     )
+
     window.maze_ctrl.gen()
     window.maze_ctrl.animation()
     window.run()

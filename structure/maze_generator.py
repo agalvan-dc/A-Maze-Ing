@@ -181,48 +181,85 @@ class MazeGenerator:
         has_visited = [entry]  # empezamos por donde diga el config
         visit(1, 1)
         if perfect == 'False' or perfect is False:
-            # Recorremos todas las celdas de camino transitables (coordenadas impares)
+        # Recorremos todas las celdas lógicas transitables
             for y in range(1, height - 1, 2):
                 for x in range(1, width - 1, 2):
-                    if maze[(x, y)] == self.EMPTY:
 
-                        # 1. Contamos los muros inmediatos (distancia 1)
-                        wall_neighbors = []
-                        if maze.get((x, y - 1)) in (self.WALL, self.FORTY_TWO):
-                            wall_neighbors.append(self.NORTH)
-                        if maze.get((x, y + 1)) in (self.WALL, self.FORTY_TWO):
-                            wall_neighbors.append(self.SOUTH)
-                        if maze.get((x - 1, y)) in (self.WALL, self.FORTY_TWO):
-                            wall_neighbors.append(self.WEST)
-                        if maze.get((x + 1, y)) in (self.WALL, self.FORTY_TWO):
-                            wall_neighbors.append(self.EAST)
+                    if maze[(x, y)] != self.EMPTY:
+                        continue
 
-                        # 2. Si tiene 3 muros a distancia 1, es un callejón sin salida real
-                        if len(wall_neighbors) == 3:
-                            secure_options = []
+                    # Contamos los muros inmediatos
+                    wall_neighbors = []
 
-                            # Filtramos las direcciones para quedarnos SOLO con muros internos.
-                            if self.NORTH in wall_neighbors and y > 1 and maze.get((x, y - 1)) == self.WALL:
-                                secure_options.append(self.NORTH)
-                            if self.SOUTH in wall_neighbors and y < height - 2 and maze.get((x, y + 1)) == self.WALL:
-                                secure_options.append(self.SOUTH)
-                            if self.WEST in wall_neighbors and x > 1 and maze.get((x - 1, y)) == self.WALL:
-                                secure_options.append(self.WEST)
-                            if self.EAST in wall_neighbors and x < width - 2 and maze.get((x + 1, y)) == self.WALL:
-                                secure_options.append(self.EAST)
+                    if maze.get((x, y - 1)) in (self.WALL, self.FORTY_TWO):
+                        wall_neighbors.append(self.NORTH)
 
-                            # 3. Si hay opciones seguras, elegimos una al azar y rompemos el muro intermedio
-                            if secure_options:
-                                wall_to_break = random.choice(secure_options)
-                                if wall_to_break == self.NORTH:
-                                    maze[(x, y - 1)] = self.EMPTY
-                                elif wall_to_break == self.SOUTH:
-                                    maze[(x, y + 1)] = self.EMPTY
-                                elif wall_to_break == self.WEST:
-                                    maze[(x - 1, y)] = self.EMPTY
-                                elif wall_to_break == self.EAST:
-                                    maze[(x + 1, y)] = self.EMPTY
+                    if maze.get((x, y + 1)) in (self.WALL, self.FORTY_TWO):
+                        wall_neighbors.append(self.SOUTH)
 
+                    if maze.get((x - 1, y)) in (self.WALL, self.FORTY_TWO):
+                        wall_neighbors.append(self.WEST)
+
+                    if maze.get((x + 1, y)) in (self.WALL, self.FORTY_TWO):
+                        wall_neighbors.append(self.EAST)
+
+                    # Si tiene 3 muros, es un callejón sin salida
+                    if len(wall_neighbors) == 3:
+                        secure_options = []
+
+                        # NORTH
+                        # El muro debe ser interno y la celda destino
+                        # no puede pertenecer al 42.
+                        if (
+                            self.NORTH in wall_neighbors
+                            and y > 1
+                            and maze.get((x, y - 1)) == self.WALL
+                            and maze.get((x, y - 2)) != self.FORTY_TWO
+                        ):
+                            secure_options.append(self.NORTH)
+
+                        # SOUTH
+                        if (
+                            self.SOUTH in wall_neighbors
+                            and y < height - 2
+                            and maze.get((x, y + 1)) == self.WALL
+                            and maze.get((x, y + 2)) != self.FORTY_TWO
+                        ):
+                            secure_options.append(self.SOUTH)
+
+                        # WEST
+                        if (
+                            self.WEST in wall_neighbors
+                            and x > 1
+                            and maze.get((x - 1, y)) == self.WALL
+                            and maze.get((x - 2, y)) != self.FORTY_TWO
+                        ):
+                            secure_options.append(self.WEST)
+
+                        # EAST
+                        if (
+                            self.EAST in wall_neighbors
+                            and x < width - 2
+                            and maze.get((x + 1, y)) == self.WALL
+                            and maze.get((x + 2, y)) != self.FORTY_TWO
+                        ):
+                            secure_options.append(self.EAST)
+
+                        # Romper una pared válida al azar
+                        if secure_options:
+                            wall_to_break = random.choice(secure_options)
+
+                            if wall_to_break == self.NORTH:
+                                maze[(x, y - 1)] = self.EMPTY
+
+                            elif wall_to_break == self.SOUTH:
+                                maze[(x, y + 1)] = self.EMPTY
+
+                            elif wall_to_break == self.WEST:
+                                maze[(x - 1, y)] = self.EMPTY
+
+                            elif wall_to_break == self.EAST:
+                                maze[(x + 1, y)] = self.EMPTY
         maze[entry] = self.BLUE
         maze[exit_pos] = self.RED
         return maze

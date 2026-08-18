@@ -1,9 +1,8 @@
 PYTHON == $(shell if [ -x .venv/bin/python3 ]; then echo .venv/bin/python3; else echo python3; fi)
-CONFIG == utilities/config.txt
 
 install:
+	$(PYTHON) -m pip install flake8 mypy poetry
 	poetry install
-	$(PYTHON) -m pip install flake8 mypy
 
 
 clean:
@@ -11,7 +10,7 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	rm -rf .mypy_cache
 	rm -f utilities/maze_output.txt
-	rm -f processed_map.npy
+	rm -f utilities/processed_map.npy
 
 run: 
 	poetry run python a_maze_ing.py

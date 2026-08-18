@@ -32,7 +32,7 @@ class MazeRenderer:
         self.step_index = 0
         self.path_index = 0
 
-        self.steps_per_frame = 2
+        self.steps_per_frame = 1
 
         self.COLOR_BG: int = 0xFF1E1E2E
         self.COLOR_WALL: int = 0xFF45475A
@@ -40,6 +40,7 @@ class MazeRenderer:
         self.COLOR_END: int = 0xFFF38BA8
         self.COLOR_VISITED: int = 0xFF89DCEB
         self.COLOR_PATH: int = 0xFFA6E3A1
+        self.COLOR_42: int = 0xFFFF8800
 
     def _path_str_to_coords(
         self, start: tuple[int, int], path_str: str
@@ -88,39 +89,121 @@ class MazeRenderer:
             width, height, cell_size
         )
 
+        # =========================================================
+        # 1. DIBUJAR LABERINTO
+        #
+        # processed_map.npy:
+        #   0 = camino
+        #   1 = muro
+        #   2 = 42
+        # =========================================================
         for r in range(self.model.rows):
             for c in range(self.model.cols):
-                if self.model.is_wall(r, c):
+
+                cell = self.model.grid[r, c]
+
+                # 42
+                if cell == 2:
                     self.draw_cell(
-                        screen, r, c, self.COLOR_WALL, cell_size,
-                        offset_x, offset_y
+                        screen,
+                        r,
+                        c,
+                        self.COLOR_42,
+                        cell_size,
+                        offset_x,
+                        offset_y
                     )
 
-        max_visited = min(self.step_index, len(self.visited_steps))
+                # Muro normal
+                elif cell == 1:
+                    self.draw_cell(
+                        screen,
+                        r,
+                        c,
+                        self.COLOR_WALL,
+                        cell_size,
+                        offset_x,
+                        offset_y
+                    )
+
+        # =========================================================
+        # 2. VISITADOS
+        # =========================================================
+        max_visited = min(
+            self.step_index,
+            len(self.visited_steps)
+        )
+
         for i in range(max_visited):
             r, c = self.visited_steps[i]
+
+            # No pintar encima del 42
+            if self.model.grid[r, c] == 2:
+                continue
+
             self.draw_cell(
-                screen, r, c, self.COLOR_VISITED, cell_size,
-                offset_x, offset_y
+                screen,
+                r,
+                c,
+                self.COLOR_VISITED,
+                cell_size,
+                offset_x,
+                offset_y
             )
 
-        if self.state in (AnimationState.DRAWING_PATH,
-                          AnimationState.FINISHED):
-            max_path = min(self.path_index, len(self.final_path))
+        # =========================================================
+        # 3. CAMINO FINAL
+        # =========================================================
+        if self.state in (
+            AnimationState.DRAWING_PATH,
+            AnimationState.FINISHED
+        ):
+            max_path = min(
+                self.path_index,
+                len(self.final_path)
+            )
+
             for i in range(max_path):
                 r, c = self.final_path[i]
+
+                # No pintar encima del 42
+                if self.model.grid[r, c] == 2:
+                    continue
+
                 self.draw_cell(
-                    screen, r, c, self.COLOR_PATH, cell_size,
-                    offset_x, offset_y
+                    screen,
+                    r,
+                    c,
+                    self.COLOR_PATH,
+                    cell_size,
+                    offset_x,
+                    offset_y
                 )
 
+        # =========================================================
+        # 4. ENTRADA / SALIDA
+        # =========================================================
         sr, sc = self.model.start
         er, ec = self.model.end
+
         self.draw_cell(
-            screen, sr, sc, self.COLOR_START, cell_size, offset_x, offset_y
+            screen,
+            sr,
+            sc,
+            self.COLOR_START,
+            cell_size,
+            offset_x,
+            offset_y
         )
+
         self.draw_cell(
-            screen, er, ec, self.COLOR_END, cell_size, offset_x, offset_y
+            screen,
+            er,
+            ec,
+            self.COLOR_END,
+            cell_size,
+            offset_x,
+            offset_y
         )
 
     def update_animation(self) -> None:
