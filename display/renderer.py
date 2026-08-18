@@ -38,6 +38,7 @@ class MazeRenderer:
         visited_steps: list[tuple[int, int]],
         final_path: Union[str, list[tuple[int, int]]],
     ) -> None:
+
         """Initializes render components, maze state and maze color
 
             Args:
@@ -48,12 +49,26 @@ class MazeRenderer:
         self.model = model
         self.visited_steps = visited_steps
 
+        """Initializes render components, maze state and maze color."""
+
+        self.model = model
+
+
         if isinstance(final_path, str):
+            if self.model is None:
+                raise RuntimeError(
+                    "MazeRenderer requires a maze model "
+                    "when final_path is a string."
+                )
+
             self.final_path = self._path_str_to_coords(
-                self.model.start, final_path
+                self.model.start,
+                final_path
             )
         else:
             self.final_path = final_path
+
+        self.visited_steps = visited_steps
 
         self.state = AnimationState.EXPLORING
         self.step_index = 0
