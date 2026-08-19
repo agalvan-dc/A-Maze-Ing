@@ -15,10 +15,10 @@ clean:
 	rm -f poetry.lock
 
 run: 
-	poetry run python a_maze_ing.py
+	poetry run python a_maze_ing.py utilities/config.txt
 
 debug:
-	poetry run python -m pdb a_maze_ing.py
+	poetry run python -m pdb a_maze_ing.py utilities/config.txt
 
 lint:
 	flake8 . --exclude=mlx,venv
