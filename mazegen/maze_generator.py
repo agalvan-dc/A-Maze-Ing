@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import deque
 import random
 from typing import TypeAlias
-import sys
 
 Coordinate: TypeAlias = tuple[int, int]
 Maze: TypeAlias = dict[Coordinate, str]
@@ -63,7 +62,6 @@ class MazeGenerator:
         if width < 1 or height < 1:
             raise ValueError("width and height must be positive")
 
-        # Si seed es 0, lo pasamos a None para que randomice completamente
         if seed == 0:
             seed = None
 
@@ -83,9 +81,6 @@ class MazeGenerator:
         self.warning_msg: str | None = None
 
         self._validate_coordinates()
-
-        # Keep the random generator local to this instance.
-        # This avoids changing Python's global random state.
         self._random = random.Random(seed)
 
     def _validate_coordinates(self) -> None:
@@ -109,10 +104,12 @@ class MazeGenerator:
 
     @property
     def get_entry(self) -> Coordinate:
+        """Gets the entry"""
         return self.entry
 
     @property
     def get_exit(self) -> Coordinate:
+        """Gets the exit"""
         return self.exit
 
     def _logical_to_physical(
@@ -391,15 +388,12 @@ class MazeGenerator:
             print_need = True
         if self.maze[exit_physical] == self.FORTY_TWO:
             exit_physical = (self.width * 2), (self.height * 2)
-            self.exit = self.height - 1, self.width - 1
+            self.exit = self.width - 1, self.height - 1
             print_need = True
         if print_need is True:
             print("Coordinates collide with 42, reallocation")
         self.maze[entry_physical] = self.BLUE
         self.maze[exit_physical] = self.RED
-
-        # Generate the solution at the same time so that it is immediately
-        # available to consumers of the reusable package.
         self.solve()
 
         return self.maze
@@ -460,7 +454,6 @@ class MazeGenerator:
 
         if target not in previous:
             raise RuntimeError("can't find solution in maze")
-            sys.exit(1)
 
         path: list[Coordinate] = []
         node: Coordinate | None = target

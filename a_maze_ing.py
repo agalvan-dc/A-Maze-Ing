@@ -8,7 +8,7 @@ from structure import MazeSolver
 from mazegen import MazeGenerator
 
 
-CONFIG_PATH = "utilities/config.txt"
+CONFIG_PATH = sys.argv[1]
 OUTPUT_FILE = "utilities/maze_output.txt"
 
 
