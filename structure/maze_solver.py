@@ -414,17 +414,21 @@ class MazeSolver:
 
             file.write("\n")
 
-            if self.get_cell_hex(self.entry) != 'F':
+            if self.get_cell_hex(self.entry[0], self.entry[1]) != "F":
                 file.write(
                     f"{self.entry[0]},{self.entry[1]}\n"
                 )
             else:
-                print("Entry detected in 42 square. Placing in 0,0...")
-                file.write(f"{0,0}")
+                file.write(f"{0,0}\n")
 
-            file.write(
-                f"{self.exit[0]},{self.exit[1]}\n"
-            )
+            if self.get_cell_hex(self.exit[0], self.exit[1]) != "F":
+                file.write(
+                    f"{self.exit[0]},{self.exit[1]}\n"
+                )
+            else:
+                self.height = self.height - 1
+                self.width = self.width - 1
+                file.write(f"{self.height},{self.width}\n")
 
             file.write(
                 self.path_to_directions() + "\n"

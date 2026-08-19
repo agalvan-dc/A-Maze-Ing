@@ -104,6 +104,14 @@ class MazeGenerator:
                     f"the maze"
                 )
 
+    @property
+    def get_entry(self) -> Coordinate:
+        return self.entry
+
+    @property
+    def get_exit(self) -> Coordinate:
+        return self.exit
+
     def _logical_to_physical(
         self,
         coordinate: Coordinate,
@@ -255,6 +263,9 @@ class MazeGenerator:
 
         if self.maze[start_physical] != self.FORTY_TWO:
             self.maze[start_physical] = self.EMPTY
+        else:
+            start = 0, 0
+            self.entry = 0, 0
 
         def dfs(current: Coordinate) -> None:
             neighbors = self._neighbors(current, visited)
@@ -370,7 +381,17 @@ class MazeGenerator:
 
         entry_physical = self._logical_to_physical(self.entry)
         exit_physical = self._logical_to_physical(self.exit)
+        print_need = False
 
+        if self.maze[entry_physical] == self.FORTY_TWO:
+            entry_physical = 0, 0
+            print_need = True
+        if self.maze[exit_physical] == self.FORTY_TWO:
+            exit_physical = (self.width * 2), (self.height * 2)
+            self.exit = self.height - 1, self.width - 1
+            print_need = True
+        if print_need is True:
+            print("Coordinates collide with 42, reallocation")
         self.maze[entry_physical] = self.BLUE
         self.maze[exit_physical] = self.RED
 

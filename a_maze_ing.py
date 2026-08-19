@@ -48,8 +48,8 @@ def main() -> None:
     generator = create_generator(data)
     maze = generator.generate()
 
-    entry = data["entry"]
-    exit_pos = data["exit"]
+    entry = generator.get_entry
+    exit_pos = generator.get_exit
 
     solver = MazeSolver(
         maze,
