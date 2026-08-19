@@ -78,5 +78,7 @@ def validate_conf(filepath: str) -> dict[str, Any]:
 
         return config.model_dump()
     except ValidationError as e:
-        print(f"Validation error: {e}")
+        error_msg = e.errors()[0]['msg']
+        print("Expected validation error:")
+        print(error_msg)
         sys.exit(1)
