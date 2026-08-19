@@ -1,4 +1,4 @@
-PYTHON == python3
+PYTHON = python3
 
 install:
 	$(PYTHON) -m pip install flake8 mypy poetry
@@ -16,17 +16,20 @@ clean:
 
 run: 
 	poetry run python a_maze_ing.py
+
+debug:
+	poetry run python -m pdb a_maze_ing.py
+
 lint:
-	flake8 . --exclude=mlx,env_v
-	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs mypy --exclude='^(mlx|env_v)(/|$)'
+	flake8 . --exclude=mlx,venv
+	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs --exclude='^(mlx|venv)(/|$$)'
 
 lint-strict:
-	flake8 . --exclude=mlx
-	$(PYTHON) -m mypy --strict --exclude=mlx .
+	flake8 . --exclude=mlx,venv
+	$(PYTHON) -m mypy --strict --exclude='^(mlx|venv)(/|$$)' .
 
 v_env:
-	$(PYTHON) -m venv v_env
-	$(PYTHON) source v_env/bin/activate  
+	$(PYTHON) -m venv venv 
 
 
 .PHONY: install run debug clean lint lint-strict v_env
