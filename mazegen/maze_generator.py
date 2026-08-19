@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 import random
 from typing import TypeAlias
-
+import sys
 
 Coordinate: TypeAlias = tuple[int, int]
 Maze: TypeAlias = dict[Coordinate, str]
@@ -459,8 +459,8 @@ class MazeGenerator:
                 queue.append(neighbor)
 
         if target not in previous:
-            self.solution = []
-            return self.solution
+            raise RuntimeError("can't find solution in maze")
+            sys.exit(1)
 
         path: list[Coordinate] = []
         node: Coordinate | None = target

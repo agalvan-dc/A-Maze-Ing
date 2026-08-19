@@ -50,13 +50,16 @@ def validate_conf(filepath: str) -> dict[str, Any]:
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in file:
                 line = line.strip()
-                if not line or '=' not in line:
+                if not line:
                     continue
+                elif '=' not in line:
+                    raise SyntaxError
 
                 key, value = line.split('=', 1)
                 config_dict[key.strip().lower()] = value.strip()
 
         config = ValidateConfig(**config_dict)
+
         return config.model_dump()
     except ValidationError as e:
         print(f"Validation error: {e}")

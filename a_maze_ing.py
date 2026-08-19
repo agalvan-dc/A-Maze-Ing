@@ -43,6 +43,9 @@ def main() -> None:
     except FileNotFoundError as e:
         print(f"Not the best path? - {e}")
         sys.exit(1)
+    except SyntaxError:
+        print("Bad config...")
+        sys.exit(1)
 
     sys.stdout.write("\033[H\033[J")
     generator = create_generator(data)
@@ -93,17 +96,17 @@ def main() -> None:
                         dt(p_color, w_color)
 
                     case "3":
-                        sys.exit("Exiting...")
+                        sys.exit(0)
 
                     case _:
-                        sys.exit(1)
+                        sys.exit("Not a valid option")
 
         case "2":
             entry, ex, path = bin_maze(OUTPUT_FILE)
             md(entry, ex, path)
 
         case "3":
-            sys.exit("Exiting...")
+            sys.exit(0)
 
         case _:
             print("Error: Not a valid option")
