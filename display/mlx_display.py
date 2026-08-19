@@ -84,8 +84,7 @@ class MazeController:
 
     def gen(self) -> None:
         """Generate a maze and update all rendering components."""
-        self.generator.seed = None
-        self.generator._random = random.Random(None)
+        self.generator._random = random.Random(self.generator.seed)
         maze = self.generator.generate()
 
         solver = MazeSolver(

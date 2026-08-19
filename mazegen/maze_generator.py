@@ -377,8 +377,6 @@ class MazeGenerator:
         self.maze[entry_physical] = self.BLUE
         self.maze[exit_physical] = self.RED
 
-        # Generate the solution at the same time so that it is immediately
-        # available to consumers of the reusable package.
         self.solve()
 
         return self.maze
