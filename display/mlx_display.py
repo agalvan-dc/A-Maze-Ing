@@ -495,6 +495,14 @@ class mlx_buffer:
             self.close()
 
     def load_xpm_texture(self, filepath: str) -> np.ndarray:
+        """Takes .xpm file and loads texture from it
+
+            Args:
+                filepath: where the .xpm is loaded
+
+            Return:
+                numpy matrix with the loaded texture
+        """
         img_ptr, width, height = self.m.mlx_xpm_file_to_image(
             self._mlx_ptr,
             filepath,

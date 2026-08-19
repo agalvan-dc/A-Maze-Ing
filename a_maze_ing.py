@@ -44,6 +44,7 @@ def main() -> None:
         print(f"Not the best path? - {e}")
         sys.exit(1)
 
+    sys.stdout.write("\033[H\033[J")
     generator = create_generator(data)
     maze = generator.generate()
 
@@ -54,14 +55,6 @@ def main() -> None:
         maze,
         entry,
         exit_pos,
-    )
-
-    print("SOLVER WIDTH:", solver.width)
-    print("SOLVER HEIGHT:", solver.height)
-    print(
-        "PHYSICAL:",
-        max(x for x, y in maze) + 1,
-        max(y for x, y in maze) + 1,
     )
 
     solver.write_output(OUTPUT_FILE)
@@ -118,4 +111,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

@@ -6,7 +6,11 @@ from .read_data import read_maze_data as read_m
 
 
 def bin_maze(filepath: str) -> tuple:
+    """Converts .txt to a bin maze, up for usage
 
+        Args:
+            filepath: .txt path
+    """
     maze_lines, entry, ex, path_str = read_m(filepath)
 
     map_bits = np.array(
@@ -76,6 +80,15 @@ def terminal_display(entry: tuple[int, int],
                      path_str: str,
                      path_color: Optional[int] = None,
                      wall_color: Optional[int] = None) -> None:
+    """Displays terminal display
+
+        Args:
+            entry: entry tuple
+            exit: exit tuple
+            path_str: final maze solution path
+            path_color: final maze solution color
+            wall_color: wall color
+    """
 
     c_start = "\033[92m"
     c_end = "\033[91m"
