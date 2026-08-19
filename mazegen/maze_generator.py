@@ -440,11 +440,11 @@ class MazeGenerator:
             return self.solution
 
         path: list[Coordinate] = []
-        current: Coordinate | None = target
+        node: Coordinate | None = target
 
-        while current is not None:
-            path.append(current)
-            current = previous[current]
+        while node is not None:
+            path.append(node)
+            node = previous[node]
 
         path.reverse()
         self.solution = path
