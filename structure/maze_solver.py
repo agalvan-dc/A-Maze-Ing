@@ -414,9 +414,13 @@ class MazeSolver:
 
             file.write("\n")
 
-            file.write(
-                f"{self.entry[0]},{self.entry[1]}\n"
-            )
+            if self.get_cell_hex(self.entry) != 'F':
+                file.write(
+                    f"{self.entry[0]},{self.entry[1]}\n"
+                )
+            else:
+                print("Entry detected in 42 square. Placing in 0,0...")
+                file.write(f"{0,0}")
 
             file.write(
                 f"{self.exit[0]},{self.exit[1]}\n"
