@@ -63,6 +63,7 @@ class MazeGenerator:
         if width < 1 or height < 1:
             raise ValueError("width and height must be positive")
 
+        # Si seed es 0, lo pasamos a None para que randomice completamente
         if seed == 0:
             seed = None
 
@@ -83,6 +84,8 @@ class MazeGenerator:
 
         self._validate_coordinates()
 
+        # Keep the random generator local to this instance.
+        # This avoids changing Python's global random state.
         self._random = random.Random(seed)
 
     def _validate_coordinates(self) -> None:
@@ -247,7 +250,7 @@ class MazeGenerator:
         self.maze[wall] = self.EMPTY
 
     def _generate_basic(self) -> None:
-        """Generate a maze using recursive randomized DFS."""
+        """Generate a maze using iterative randomized DFS."""
         start = self.entry
         visited: set[Coordinate] = {start}
 
@@ -256,22 +259,22 @@ class MazeGenerator:
         if self.maze[start_physical] != self.FORTY_TWO:
             self.maze[start_physical] = self.EMPTY
 
-        def dfs(current: Coordinate) -> None:
+        stack: list[Coordinate] = [start]
+
+        while stack:
+            current = stack[-1]
+
             neighbors = self._neighbors(current, visited)
 
             if not neighbors:
-                return
+                stack.pop()
+                continue
 
             _, next_cell = self._random.choice(neighbors)
 
             self._remove_wall(current, next_cell)
             visited.add(next_cell)
-
-            dfs(next_cell)
-
-            dfs(current)
-
-        dfs(start)
+            stack.append(next_cell)
 
     def _create_loops(self) -> None:
         """Remove dead ends by opening valid walls."""
@@ -374,6 +377,8 @@ class MazeGenerator:
         self.maze[entry_physical] = self.BLUE
         self.maze[exit_physical] = self.RED
 
+        # Generate the solution at the same time so that it is immediately
+        # available to consumers of the reusable package.
         self.solve()
 
         return self.maze
