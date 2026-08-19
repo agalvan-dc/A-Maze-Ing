@@ -192,6 +192,14 @@ def terminal_display(entry: tuple[int, int],
 
 def dt(output_file: str,
        path_color: int | None = None, wall_color: int | None = None) -> None:
+    """
+    Display the maze in the terminal.
+
+        Args:
+            output_file: Path to the binary maze output file.
+            path_color: The color code to use for the path, or None for default.
+            wall_color: The color code to use for the walls, or None for default.
+    """
     entry, ex, path = bin_maze(output_file)
     terminal_display(
         entry,

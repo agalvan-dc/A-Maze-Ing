@@ -1,10 +1,13 @@
+def read_maze_data(
+    filepath: str
+) -> tuple[list[str], tuple[str, str], tuple[str, str], str]:
+    """
+    Read a text file and separate the maze data into its components.
 
-
-def read_maze_data(filepath: str) -> tuple[str,
-                                           tuple[str, str],
-                                           tuple[str, str], str]:
-    """Reads .txt and separates data"""
-    maze_lines = []
+    The function extracts the map structure, the entry coordinate,
+    the exit coordinate, and the intended path sequence.
+    """
+    maze_lines: list[str] = []
     entry_coord = ("0", "0")
     exit_coord = ("0", "0")
     path_str = ""

@@ -43,10 +43,15 @@ def main() -> None:
         sys.exit("Syntax Error")
     except OSError:
         sys.exit("OS Error")
+    except ValueError:
+        sys.exit("Value Error")
 
     sys.stdout.write("\033[H\033[J")
-    generator = create_generator(data)
-    maze = generator.generate()
+    try:
+        generator = create_generator(data)
+        maze = generator.generate()
+    except ValueError as e:
+        sys.exit(e)
 
     entry = generator.get_entry
     exit_pos = generator.get_exit
@@ -101,7 +106,7 @@ def main() -> None:
 
         case "2":
             entry, ex, path = bin_maze(data['output_file'])
-            md(entry, ex, path, data["output_file"])
+            md(entry, ex, path, sys.argv[1])
 
         case "3":
             sys.exit(0)

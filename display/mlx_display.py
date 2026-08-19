@@ -39,7 +39,7 @@ def create_generator(config: dict[str, Any]) -> MazeGenerator:
     Returns:
         A configured MazeGenerator instance.
     """
-    seed = config["seed"]
+    seed = int(config["seed"])
 
     if seed in ("", "random", "RANDOM"):
         seed = None
