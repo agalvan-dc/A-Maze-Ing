@@ -63,7 +63,6 @@ class MazeGenerator:
         if width < 1 or height < 1:
             raise ValueError("width and height must be positive")
 
-        # Si seed es 0, lo pasamos a None para que randomice completamente
         if seed == 0:
             seed = None
 
@@ -84,8 +83,6 @@ class MazeGenerator:
 
         self._validate_coordinates()
 
-        # Keep the random generator local to this instance.
-        # This avoids changing Python's global random state.
         self._random = random.Random(seed)
 
     def _validate_coordinates(self) -> None:
