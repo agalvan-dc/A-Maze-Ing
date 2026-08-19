@@ -1,7 +1,7 @@
 
 
 def read_maze_data(filepath: str) -> tuple[str,
-                                           tuple[str, str], tuple[str, str]] :
+                                           tuple[str, str], tuple[str, str]]:
     """Reads .txt and separates data"""
     maze_lines = []
     entry_coord = (0, 0)

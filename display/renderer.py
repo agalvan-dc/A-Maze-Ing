@@ -53,7 +53,6 @@ class MazeRenderer:
 
         self.model = model
 
-
         if isinstance(final_path, str):
             if self.model is None:
                 raise RuntimeError(
