@@ -250,7 +250,7 @@ class MazeGenerator:
         self.maze[wall] = self.EMPTY
 
     def _generate_basic(self) -> None:
-        """Generate a maze using iterative randomized DFS."""
+        """Generate a maze using recursive randomized DFS."""
         start = self.entry
         visited: set[Coordinate] = {start}
 
@@ -259,22 +259,22 @@ class MazeGenerator:
         if self.maze[start_physical] != self.FORTY_TWO:
             self.maze[start_physical] = self.EMPTY
 
-        stack: list[Coordinate] = [start]
-
-        while stack:
-            current = stack[-1]
-
+        def dfs(current: Coordinate) -> None:
             neighbors = self._neighbors(current, visited)
 
             if not neighbors:
-                stack.pop()
-                continue
+                return
 
             _, next_cell = self._random.choice(neighbors)
 
             self._remove_wall(current, next_cell)
             visited.add(next_cell)
-            stack.append(next_cell)
+
+            dfs(next_cell)
+
+            dfs(current)
+
+        dfs(start)
 
     def _create_loops(self) -> None:
         """Remove dead ends by opening valid walls."""
