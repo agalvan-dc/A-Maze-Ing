@@ -1,11 +1,12 @@
 
 
 def read_maze_data(filepath: str) -> tuple[str,
-                                           tuple[str, str], tuple[str, str]]:
+                                           tuple[str, str],
+                                           tuple[str, str], str]:
     """Reads .txt and separates data"""
     maze_lines = []
-    entry_coord = (0, 0)
-    exit_coord = (0, 0)
+    entry_coord = ("0", "0")
+    exit_coord = ("0", "0")
     path_str = ""
 
     with open(filepath, 'r', encoding='utf-8') as file:

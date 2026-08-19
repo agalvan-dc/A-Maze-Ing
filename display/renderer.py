@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Union
+from typing import Union
 from structure import MazeModel
 import numpy as np
 
@@ -34,7 +34,7 @@ class MazeRenderer:
 
     def __init__(
         self,
-        model: Optional[MazeModel],
+        model: MazeModel,
         visited_steps: list[tuple[int, int]],
         final_path: Union[str, list[tuple[int, int]]],
     ) -> None:

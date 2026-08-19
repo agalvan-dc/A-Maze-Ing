@@ -2,6 +2,7 @@
 from pydantic import BaseModel, model_validator, field_validator, Field
 from pydantic import ValidationError
 import sys
+from typing import Any
 
 
 class ValidateConfig(BaseModel):
@@ -42,8 +43,8 @@ class ValidateConfig(BaseModel):
         return self
 
 
-def validate_conf(filepath: str) -> dict:
-    config_dict = {}
+def validate_conf(filepath: str) -> dict[str, Any]:
+    config_dict: dict[str, Any] = {}
 
     try:
         with open(filepath, 'r', encoding='utf-8') as file:

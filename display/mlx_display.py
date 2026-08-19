@@ -521,7 +521,7 @@ class mlx_buffer:
         pixel_array_type = ctypes.c_uint32 * (stride * height)
         pixel_buffer = pixel_array_type.from_buffer(data_info[0])
 
-        texture = np.frombuffer(
+        texture: np.ndarray = np.frombuffer(
             pixel_buffer,
             dtype=np.uint32,
         ).reshape(
@@ -579,6 +579,10 @@ class mlx_buffer:
             controls = (
                 "[W/A/S/D] Move",
                 "[< / >]   Rotate cam",
+                "",
+                ""
+                "",
+                "",
             )
 
         for index, text in enumerate(controls):

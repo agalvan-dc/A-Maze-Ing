@@ -5,7 +5,7 @@ import numpy as np
 from .read_data import read_maze_data as read_m
 
 
-def bin_maze(filepath: str) -> tuple:
+def bin_maze(filepath: str) -> tuple[tuple[int, int], tuple[int, int], str]:
     """Converts .txt to a bin maze, up for usage
 
         Args:
@@ -190,7 +190,7 @@ def terminal_display(entry: tuple[int, int],
             time.sleep(0.05)
 
 
-def dt(path_color=None, wall_color=None):
+def dt(path_color: int | None = None, wall_color: int | None = None) -> None:
     entry, ex, path = bin_maze("utilities/maze_output.txt")
     terminal_display(
         entry,

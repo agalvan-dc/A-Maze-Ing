@@ -22,7 +22,7 @@ debug:
 
 lint:
 	flake8 . --exclude=mlx,venv
-	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs --exclude='^(mlx|venv)(/|$$)'
+	$(PYTHON) -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs --exclude='^(mlx/mlx.py|venv)(/|$$)'
 
 lint-strict:
 	flake8 . --exclude=mlx,venv
