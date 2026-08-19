@@ -42,7 +42,7 @@ def create_generator(config: dict[str, Any]) -> MazeGenerator:
     seed = int(config["seed"])
 
     if seed in ("", "random", "RANDOM"):
-        seed = None
+        seed = 0
 
     perfect = config["perfect"]
 
@@ -345,7 +345,7 @@ class mlx_buffer:
         ui_pixel_array = (ctypes.c_uint32 *
                           (self._ui_width *
                            self._height)).from_buffer(ui_data_info[0])
-        ui_screen = np.frombuffer(ui_pixel_array,
+        ui_screen = np.frombuffer(memoryview(ui_pixel_array),
                                   dtype=np.uint32).reshape((self._height,
                                                             self._ui_width))
         ui_screen.fill(0x001E1E1E)
@@ -357,7 +357,7 @@ class mlx_buffer:
                             self._height)).from_buffer(img_data_info[0])
 
         self.screen = np.frombuffer(
-            img_pixel_array,
+            memoryview(img_pixel_array),
             dtype=np.uint32,
         ).reshape(
             (self._height, self._width)
@@ -521,7 +521,7 @@ class mlx_buffer:
         pixel_buffer = pixel_array_type.from_buffer(data_info[0])
 
         texture: np.ndarray = np.frombuffer(
-            pixel_buffer,
+            memoryview(pixel_buffer),
             dtype=np.uint32,
         ).reshape(
             (height, stride)

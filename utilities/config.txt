@@ -3,5 +3,5 @@ HEIGHT=10
 ENTRY=1,1
 EXIT=9,9
 OUTPUT_FILE=utilities/maze_output.txt
-WIDTH=24
-SEED=42
+PERFECT=False
+SEED=0

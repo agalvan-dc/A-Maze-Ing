@@ -197,8 +197,10 @@ def dt(output_file: str,
 
         Args:
             output_file: Path to the binary maze output file.
-            path_color: The color code to use for the path, or None for default.
-            wall_color: The color code to use for the walls, or None for default.
+            path_color: The color code to use
+                for the path, or None for default.
+            wall_color: The color code to use
+                for the walls, or None for default.
     """
     entry, ex, path = bin_maze(output_file)
     terminal_display(

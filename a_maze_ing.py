@@ -6,9 +6,10 @@ import structure as struc
 from display import dt, md, bin_maze, random_color
 from structure import MazeSolver
 from mazegen import MazeGenerator
+from typing import Any
 
 
-def create_generator(data: dict) -> MazeGenerator:
+def create_generator(data: dict[str, Any]) -> MazeGenerator:
     """Create a reusable maze generator from the parsed configuration."""
     seed = data["seed"]
 
@@ -51,7 +52,7 @@ def main() -> None:
         generator = create_generator(data)
         maze = generator.generate()
     except ValueError as e:
-        sys.exit(e)
+        sys.exit(str(e))
 
     entry = generator.get_entry
     exit_pos = generator.get_exit
