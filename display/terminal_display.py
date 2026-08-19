@@ -190,8 +190,9 @@ def terminal_display(entry: tuple[int, int],
             time.sleep(0.05)
 
 
-def dt(path_color: int | None = None, wall_color: int | None = None) -> None:
-    entry, ex, path = bin_maze("utilities/maze_output.txt")
+def dt(output_file: str,
+       path_color: int | None = None, wall_color: int | None = None) -> None:
+    entry, ex, path = bin_maze(output_file)
     terminal_display(
         entry,
         ex,

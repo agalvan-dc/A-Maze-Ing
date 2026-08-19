@@ -678,6 +678,7 @@ def mlx_display(
     entry: tuple[int, int],
     ex: tuple[int, int],
     path_str: str,
+    output_file: str,
 ) -> None:
     """Initialize and start the MLX maze display.
 
@@ -705,7 +706,7 @@ def mlx_display(
     player = Player(maze_model)
 
     config = validate_conf(
-        "utilities/config.txt"
+        output_file,
     )
 
     generator = create_generator(config)

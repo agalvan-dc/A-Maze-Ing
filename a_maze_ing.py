@@ -8,10 +8,6 @@ from structure import MazeSolver
 from mazegen import MazeGenerator
 
 
-CONFIG_PATH = sys.argv[1]
-OUTPUT_FILE = "utilities/maze_output.txt"
-
-
 def create_generator(data: dict) -> MazeGenerator:
     """Create a reusable maze generator from the parsed configuration."""
     seed = data["seed"]
@@ -39,13 +35,14 @@ def main() -> None:
     print("\nParsing errors...")
 
     try:
-        data = struc.validate_conf(CONFIG_PATH)
+        data = struc.validate_conf(sys.argv[1])
     except FileNotFoundError as e:
         print(f"Not the best path? - {e}")
         sys.exit(1)
     except SyntaxError:
-        print("Bad config...")
-        sys.exit(1)
+        sys.exit("Syntax Error")
+    except OSError:
+        sys.exit("OS Error")
 
     sys.stdout.write("\033[H\033[J")
     generator = create_generator(data)
@@ -60,7 +57,7 @@ def main() -> None:
         exit_pos,
     )
 
-    solver.write_output(OUTPUT_FILE)
+    solver.write_output(data['output_file'])
 
     option = input(
         "Terminal rendering (1) | MLX library (2) | exit(3): "
@@ -69,8 +66,8 @@ def main() -> None:
 
     match option:
         case "1":
-            solver.write_output(OUTPUT_FILE)
-            dt()
+            solver.write_output(data['output_file'])
+            dt(data["output_file"])
 
             while option != "3":
                 option = input(
@@ -81,10 +78,11 @@ def main() -> None:
 
                 match option:
                     case "1":
-                        maze = generator.generate()
-                        solver = MazeSolver(maze, entry, exit_pos)
-                        solver.write_output(OUTPUT_FILE)
-                        dt()
+                        if data['seed'] == 0:
+                            maze = generator.generate()
+                            solver = MazeSolver(maze, entry, exit_pos)
+                            solver.write_output(data['output_file'])
+                        dt(data["output_file"])
 
                     case "2":
                         p_color = random_color()
@@ -93,7 +91,7 @@ def main() -> None:
                         while p_color == w_color:
                             w_color = random_color()
 
-                        dt(p_color, w_color)
+                        dt(data["output_file"], p_color, w_color)
 
                     case "3":
                         sys.exit(0)
@@ -102,15 +100,15 @@ def main() -> None:
                         sys.exit("Not a valid option")
 
         case "2":
-            entry, ex, path = bin_maze(OUTPUT_FILE)
-            md(entry, ex, path)
+            entry, ex, path = bin_maze(data['output_file'])
+            md(entry, ex, path, data["output_file"])
 
         case "3":
             sys.exit(0)
 
         case _:
-            print("Error: Not a valid option")
-            sys.exit(1)
+            sys.stdout.write("\033[H\033[J")
+            sys.exit("Error: Not a valid option")
 
 
 if __name__ == "__main__":

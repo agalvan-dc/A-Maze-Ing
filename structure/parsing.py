@@ -6,6 +6,17 @@ from typing import Any
 
 
 class ValidateConfig(BaseModel):
+    """Class in charge of parsing
+
+        Args:
+            width:
+            height:
+            entry:
+            exit:
+            output_file:
+            perfect:
+            seed:
+    """
     width: int = Field(ge=1)
     height: int = Field(ge=1)
     entry: tuple[int, int]
@@ -44,13 +55,18 @@ class ValidateConfig(BaseModel):
 
 
 def validate_conf(filepath: str) -> dict[str, Any]:
+    """Function in charge of validating configuration
+
+        Arg:
+            str:
+    """
     config_dict: dict[str, Any] = {}
 
     try:
         with open(filepath, 'r', encoding='utf-8') as file:
             for line in file:
                 line = line.strip()
-                if not line:
+                if not line or line.startswith("#"):
                     continue
                 elif '=' not in line:
                     raise SyntaxError
